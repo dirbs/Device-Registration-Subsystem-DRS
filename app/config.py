@@ -90,6 +90,8 @@ class ConfigApp:
         self.app.config['SQLALCHEMY_POOL_TIMEOUT'] = database_config.get('pool_timeout')
         self.app.config['GRACE_PERIOD'] = global_config.get('grace_period')
         self.app.config['ASSOCIATION_LIMIT'] = int(global_config.get('association_limit'))
+        self.app.config['MIN_IMEI_LENGTH'] = int(global_config.get('min_imei_length'))
+        self.app.config['MAX_IMEI_LENGTH'] = int(global_config.get('max_imei_length'))
 
         self.app.config['CELERY_BROKER_URL'] = celery_config['RabbitmqUrl']
         self.app.config['result_backend'] = celery_config['RabbitmqBackend']

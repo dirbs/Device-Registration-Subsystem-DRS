@@ -17,9 +17,8 @@ import json
 
 from flask import Response
 from flask_apispec import MethodResource, use_kwargs
-from flask_babel import lazy_gettext as _
 
-from app import app, GLOBAL_CONF, db
+from app import app, db
 from ..models.association import ImeiAssociation
 from ..models.approvedimeis import ApprovedImeis
 from ..schema.association import AssociateImeisSchema, AssociateDuplicateImeisSchema
@@ -27,11 +26,11 @@ from ..helpers.response import CODES, MIME_TYPES
 
 
 class AssociateImeis(MethodResource):
-    """Class for handling Registration Requests routes."""
+    """Class for handling Association Requests routes."""
 
     @use_kwargs(AssociateImeisSchema().fields_dict, locations=['json'])
     def post(self, **kwargs):
-        """GET method handler, returns registration requests."""
+        """POST method handler, returns association requests."""
         try:
             schema = AssociateImeisSchema()
             validation_errors = schema.validate(kwargs)
@@ -45,26 +44,26 @@ class AssociateImeis(MethodResource):
                         if ImeiAssociation.exists(kwargs.get('imei')):
                             if ImeiAssociation.detect_duplicate(kwargs.get('imei'), kwargs.get('uid')):
                                 return Response(json.dumps({"message": "imei already associated associated wih the same uid"}),
-                                                status=CODES.get("OK"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                                                status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                             elif app.config.get('GRACE_PERIOD'):
-                                return Response(json.dumps({"message": "imei already associated you want to associate duplicate?"}), status=CODES.get("OK"),
-                                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
-                            return Response(json.dumps({"message": "imei already associated"}), status=CODES.get("OK"),
+                                return Response(json.dumps({"message": "imei already associated you want to associate duplicate?"}),
+                                                status=CODES.get("OK"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                            return Response(json.dumps({"message": "imei already associated"}), status=CODES.get("CONFLICT"),
                                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                         else:
                             ImeiAssociation(imei=kwargs.get('imei'), uid=kwargs.get('uid'), duplicate=False).add()
                             return Response(json.dumps({"message": "IMEI has been associated with the given Uid"}),
                                             status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
-                        return Response(json.dumps({"message": "IMEI nor registered please register first"}), status=CODES.get("OK"),
+                        return Response(json.dumps({"message": "IMEI nor registered please register first"}), status=CODES.get("NOT_ACCEPTABLE"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
                     return Response(json.dumps({"message": "IMEIs association limit has been exceeded, i.e. Maximum number of IMIEs have been associated with this UID"}),
-                                    status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                                    status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {
-                'message': [_('Failed to retrieve response, please try later')]
+                'message': ['Failed to associate IMEI, please try later']
             }
             return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
@@ -72,7 +71,7 @@ class AssociateImeis(MethodResource):
             db.session.close()
 
     def get(self, uid):
-        """GET method handler, returns registration requests."""
+        """GET method handler, returns list IMEI associated with given UID."""
         try:
             response = ImeiAssociation.get_imei_by_uid(uid)
             associations = [{"imei":row.imei, "uid":row.imei, "start_date":str(row.start_date)} for row in response]
@@ -81,7 +80,7 @@ class AssociateImeis(MethodResource):
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {
-                'message': [_('Failed to retrieve associated imeis, please try later')]
+                'message': ['Failed to retrieve associated IMEIs, please try later']
             }
             return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
@@ -90,10 +89,11 @@ class AssociateImeis(MethodResource):
 
 
 class AssociateDuplicate(MethodResource):
+    """Class for handling Duplicate Association Requests routes."""
 
     @use_kwargs(AssociateDuplicateImeisSchema().fields_dict, locations=['json'])
     def post(self, **kwargs):
-        """GET method handler, returns registration requests."""
+        """POST method handler, returns duplicate association requests."""
         try:
             schema = AssociateDuplicateImeisSchema()
             validation_errors = schema.validate(kwargs)
@@ -107,12 +107,11 @@ class AssociateDuplicate(MethodResource):
                                     status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
                     return Response(json.dumps({"message": "IMEI already associated please ask seller to deassociate first."}),
-                                    status=CODES.get("OK"),
-                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                                    status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {
-                'message': [_('Failed to retrieve response, please try later')]
+                'message': ['Failed to associate duplicate IMEI, please try later']
             }
             return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))

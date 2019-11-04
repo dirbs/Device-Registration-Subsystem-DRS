@@ -19,7 +19,7 @@ from app import db
 
 
 class ImeiAssociation(db.Model):
-    """Database Model for ApprovedIMEIs Table."""
+    """Database Model for IMEI association/de-association Table."""
     __tablename__ = 'associatedimeis'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -33,8 +33,8 @@ class ImeiAssociation(db.Model):
 
     def __init__(self, imei, uid, duplicate=False, exported=False):
         """Constructor
-        Default exported=False & removed=False
-        First time imei is neither removed nor exported
+        Default exported=False
+        First time imei is not exported
         """
         self.imei = imei
         self.uid = uid
@@ -42,7 +42,7 @@ class ImeiAssociation(db.Model):
         self.exported = exported
 
     def add(self):
-        """Method to insert data into approved imei."""
+        """Method to insert data into associated imei."""
         try:
             db.session.add(self)
             db.session.commit()
@@ -52,16 +52,17 @@ class ImeiAssociation(db.Model):
 
     @staticmethod
     def get_imei_by_uid(uid):
-        """Method to get a single imei."""
+        """Method to list of IMEIs associated with given uid."""
         return ImeiAssociation.query.filter_by(uid=uid).filter_by(end_date=None).all()
 
     @staticmethod
     def get_imei(imei):
-        """Method to get all imeis associated to a request id."""
+        """Method to get single imei."""
         return ImeiAssociation.query.filter_by(imei=imei).first()
 
     @staticmethod
     def detect_duplicate(imei, uid):
+        """Method to check if imei already associated with given uid"""
         if ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first():
             return True
         return False
@@ -75,6 +76,7 @@ class ImeiAssociation(db.Model):
 
     @staticmethod
     def deassociate(imei, uid):
+        """Method to de-associate IMEI from given uid"""
         try:
             exists = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
             if exists:
@@ -83,15 +85,16 @@ class ImeiAssociation(db.Model):
                     db.session.commit()
                     return 200
                 else:
-                    return 409
+                    return 406
             else:
-                return 406
+                return 409
         except Exception:
             db.session.rollback()
             raise Exception
 
     @staticmethod
     def update_export_date(imei, uid):
+        """Method to update exported_at when IMEI is exported"""
         try:
             associated_imeis = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
             associated_imeis.exported_at = db.func.now()
@@ -102,6 +105,7 @@ class ImeiAssociation(db.Model):
 
     @staticmethod
     def mark_exported(imei, uid):
+        """Method to mark IMEI as exported"""
         try:
             exported_imei = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).filter_by(exported=False).first()
             exported_imei.exported_at = db.func.now()
@@ -113,12 +117,7 @@ class ImeiAssociation(db.Model):
 
     @staticmethod
     def get_all_imeis():
+        """Method to get list of all IMEIs"""
         query = 'select * from public.associatedimeis'
         results = db.engine.execute(query)
         return results
-
-    # @staticmethod
-    # def imei_exported(imei):
-    #     result = ImeiAssociation.query.filter_by(imei=imei).first()
-    #     return result.exported
-    #

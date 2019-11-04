@@ -93,7 +93,7 @@ class ApprovedImeis(db.Model):
 
     @staticmethod
     def registered(imei_norm):
-        """Check if an imei exists"""
+        """Check if an imei exists and registered"""
         if ApprovedImeis.query.filter_by(imei=imei_norm).filter_by(status='whitelist').first():
             return True
         return False
