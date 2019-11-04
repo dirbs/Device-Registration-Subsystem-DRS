@@ -75,7 +75,7 @@ lists:
   # directory path to generate the list,
   # only absolute paths to the directories are acceptable
   path: ''
-  ddcds_path: '/home/muazzama/Projects/CACF-Projects/Device-Registration-Subsystem/LISTS'
+  ddcds_path: ''
 
   # maximum number of workers used for the list generation
   # typically it should be 2 x num_of_cpus in the system
