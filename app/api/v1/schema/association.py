@@ -15,14 +15,14 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 """
 
 from marshmallow import Schema, fields, validates, ValidationError
+from app import GLOBAL_CONF
 
 
 class AssociateImeisSchema(Schema):
-    """Schema for Update Request Reviewer."""
+    """Schema for IMEI association/de-association."""
 
     imei = fields.String(required=True, description='Device IMEI', error_messages={'required': 'imei is required'})
     uid = fields.String(required=True, description='UID', error_messages={'required': 'uid is required'})
-    user_id = fields.String(required=True, description='Logged in user id', error_messages={'required': 'user_id is required'})
 
     @property
     def fields_dict(self):
@@ -31,19 +31,18 @@ class AssociateImeisSchema(Schema):
 
     @validates('imei')
     def _validate_imei(self, value):
-        """Validator to validate request_id field."""
-        if len(value) < 14:
+        """Validator to validate IMEI field."""
+        if len(value) < GLOBAL_CONF.get('min_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
-        if len(value) > 16:
+        if len(value) > GLOBAL_CONF.get('max_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
 
 
 class AssociateDuplicateImeisSchema(Schema):
-    """Schema for Update Request Reviewer."""
+    """Schema for duplicate IMEI association."""
 
     imei = fields.String(required=True, description='Device IMEI', error_messages={'required': 'imei is required'})
     uid = fields.String(required=True, description='UID', error_messages={'required': 'uid is required'})
-    user_id = fields.String(required=True, description='Logged in user id', error_messages={'required': 'user_id is required'})
     choice = fields.Boolean(required=True, description='user choice', error_messages={'required': 'choice is required'})
 
 
@@ -55,7 +54,7 @@ class AssociateDuplicateImeisSchema(Schema):
     @validates('imei')
     def _validate_imei(self, value):
         """Validator to validate request_id field."""
-        if len(value) < 14:
+        if len(value) < GLOBAL_CONF.get('min_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
-        if len(value) > 16:
+        if len(value) > GLOBAL_CONF.get('max_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
