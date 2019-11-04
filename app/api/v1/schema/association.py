@@ -22,7 +22,6 @@ class AssociateImeisSchema(Schema):
 
     imei = fields.String(required=True, description='Device IMEI', error_messages={'required': 'imei is required'})
     uid = fields.String(required=True, description='UID', error_messages={'required': 'uid is required'})
-    user_id = fields.String(required=True, description='Logged in user id', error_messages={'required': 'user_id is required'})
 
     @property
     def fields_dict(self):
@@ -43,7 +42,6 @@ class AssociateDuplicateImeisSchema(Schema):
 
     imei = fields.String(required=True, description='Device IMEI', error_messages={'required': 'imei is required'})
     uid = fields.String(required=True, description='UID', error_messages={'required': 'uid is required'})
-    user_id = fields.String(required=True, description='Logged in user id', error_messages={'required': 'user_id is required'})
     choice = fields.Boolean(required=True, description='user choice', error_messages={'required': 'choice is required'})
 
 

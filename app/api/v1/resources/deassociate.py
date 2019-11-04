@@ -37,9 +37,18 @@ class DeassociateImeis(MethodResource):
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            elif ImeiAssociation.exists(kwargs.get('imei')):
+                pair_exists = ImeiAssociation.deassociate(kwargs.get('imei'),kwargs.get('uid'))
+                if pair_exists is 200:
+                    return Response(json.dumps({"message": "IMEI "+kwargs.get('imei')+" has been deassociated."}), status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                elif pair_exists == 406:
+                    return Response(json.dumps({"message": "IMEI " + kwargs.get('imei') + " not associated with given UID."}),
+                                    status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                else:
+                    return Response(json.dumps({"message": "IMEI " + kwargs.get('imei') + " has already been deassociated."}),
+                                    status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
-                ImeiAssociation.deassociate(kwargs.get('imei'),kwargs.get('uid'))
-                return Response(json.dumps({"message": "IMEI "+kwargs.get('imei')+" has been deassociated."}), status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                return Response(json.dumps({"message": "IMEI "+kwargs.get('imei')+" does not exist hence cannot be deassociated."}), status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {

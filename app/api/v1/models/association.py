@@ -76,9 +76,16 @@ class ImeiAssociation(db.Model):
     @staticmethod
     def deassociate(imei, uid):
         try:
-            associated_imeis = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).first()
-            associated_imeis.end_date = db.func.now()
-            db.session.commit()
+            exists = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
+            if exists:
+                if exists.end_date is None:
+                    exists.end_date = db.func.now()
+                    db.session.commit()
+                    return 200
+                else:
+                    return 409
+            else:
+                return 406
         except Exception:
             db.session.rollback()
             raise Exception
