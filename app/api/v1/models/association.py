@@ -18,52 +18,28 @@ from sqlalchemy.exc import SQLAlchemyError
 from app import db
 
 
-class ApprovedImeis(db.Model):
+class ImeiAssociation(db.Model):
     """Database Model for ApprovedIMEIs Table."""
-    __tablename__ = 'approvedimeis'
+    __tablename__ = 'associatedimeis'
 
     id = db.Column(db.Integer, primary_key=True)
     imei = db.Column(db.String(14), nullable=False)
-    request_id = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(20), nullable=True)
-    delta_status = db.Column(db.String(20), nullable=True)
+    uid = db.Column(db.String(20), nullable=False)
+    start_date = db.Column(db.Date, server_default=db.func.now())
+    end_date = db.Column(db.DateTime, server_default=None)
+    duplicate = db.Column(db.Boolean, nullable=False)
+    exported_at = db.Column(db.DateTime, server_default=None)
     exported = db.Column(db.Boolean, nullable=False)
-    exported_at = db.Column(db.DateTime, nullable=True)
-    removed = db.Column(db.Boolean, nullable=False)
-    added_at = db.Column(db.Date, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
-    def __init__(self, imei_norm, request_id, status, delta_status, exported=False, removed=False):
+    def __init__(self, imei, uid, duplicate=False, exported=False):
         """Constructor
-
         Default exported=False & removed=False
         First time imei is neither removed nor exported
         """
-        self.imei = imei_norm
-        self.request_id = request_id
-        self.status = status
-        self.delta_status = delta_status
+        self.imei = imei
+        self.uid = uid
+        self.duplicate = duplicate
         self.exported = exported
-        self.removed = removed
-
-    @classmethod
-    def create_index(cls, engine):
-        """ Create Indexes for approved Imeis class. """
-
-        request_index = db.Index('approved_imeis_request_id', cls.request_id, postgresql_concurrently=True)
-        request_index.create(bind=engine)
-
-        imei_index = db.Index('approved_imeis', cls.imei, postgresql_concurrently=True)
-        imei_index.create(bind=engine)
-
-        delta_index = db.Index('approved_imeis_delta', cls.delta_status, postgresql_concurrently=True)
-        delta_index.create(bind=engine)
-
-        status_index = db.Index('approved_imeis_status', cls.status, postgresql_concurrently=True)
-        status_index.create(bind=engine)
-
-        # removed_flag_index = db.Index('approved_imeis_removed', cls.removed, postgresql_concurrently=True)
-        # removed_flag_index.create(bind=engine)
 
     def add(self):
         """Method to insert data into approved imei."""
@@ -75,51 +51,67 @@ class ApprovedImeis(db.Model):
             raise SQLAlchemyError
 
     @staticmethod
-    def get_imei(imei_norm):
+    def get_imei_by_uid(uid):
         """Method to get a single imei."""
-        return ApprovedImeis.query.filter_by(imei=imei_norm).filter_by(removed=False).first()
+        return ImeiAssociation.query.filter_by(uid=uid).filter_by(end_date=None).all()
 
     @staticmethod
-    def get_request_imeis(request_id):
+    def get_imei(imei):
         """Method to get all imeis associated to a request id."""
-        return ApprovedImeis.query.filter_by(request_id=request_id).filter_by(removed=False).all()
+        return ImeiAssociation.query.filter_by(imei=imei).first()
+
+    @staticmethod
+    def detect_duplicate(imei, uid):
+        if ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first():
+            return True
+        return False
 
     @staticmethod
     def exists(imei_norm):
         """Check if an imei exists"""
-        if ApprovedImeis.get_imei(imei_norm):
+        if ImeiAssociation.get_imei(imei_norm):
             return True
         return False
 
     @staticmethod
-    def registered(imei_norm):
-        """Check if an imei exists"""
-        if ApprovedImeis.query.filter_by(imei=imei_norm).filter_by(status='whitelist').first():
-            return True
-        return False
-
-    @staticmethod
-    def bulk_insert_imeis(imeis):
-        """Method to insert imeis in bulk, expects list of imei objects."""
+    def deassociate(imei, uid):
         try:
-            db.session.add_all(imeis)
+            associated_imeis = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).first()
+            associated_imeis.end_date = db.func.now()
             db.session.commit()
-        except SQLAlchemyError:
+        except Exception:
             db.session.rollback()
-            raise SQLAlchemyError
+            raise Exception
 
     @staticmethod
-    def bulk_delete_imeis(reg_details):
-        """Method to delete IMEIs in bulk."""
-        approved_imeis = ApprovedImeis.query.filter_by(request_id=reg_details.id).all()
-        approved_imeis_ids = map(lambda approved_imei: approved_imei.id, approved_imeis)
-        stmt = ApprovedImeis.__table__.delete().where(ApprovedImeis.id.in_(approved_imeis_ids))
-        res = db.engine.execute(stmt)
-        res.close()
+    def update_export_date(imei, uid):
+        try:
+            associated_imeis = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
+            associated_imeis.exported_at = db.func.now()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise Exception
 
     @staticmethod
-    def imei_to_export():
-        """Method to return imeis that needs to be exported along with make, model, model_number etc
-           based on type of the list generation.
-        """
-        return ApprovedImeis.query.filter_by(removed=False).all()
+    def mark_exported(imei, uid):
+        try:
+            exported_imei = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).filter_by(exported=False).first()
+            exported_imei.exported_at = db.func.now()
+            exported_imei.exported = True
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise Exception
+
+    @staticmethod
+    def get_all_imeis():
+        query = 'select * from public.associatedimeis'
+        results = db.engine.execute(query)
+        return results
+
+    # @staticmethod
+    # def imei_exported(imei):
+    #     result = ImeiAssociation.query.filter_by(imei=imei).first()
+    #     return result.exported
+    #
