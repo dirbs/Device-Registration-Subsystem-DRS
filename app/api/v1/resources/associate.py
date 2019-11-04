@@ -55,11 +55,12 @@ class AssociateImeis(MethodResource):
                             return Response(json.dumps({"message": "IMEI has been associated with the given Uid"}),
                                             status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
-                        return Response(json.dumps({"message": "IMEI nor registered please register first"}), status=CODES.get("NOT_ACCEPTABLE"),
-                                        mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                        return Response(json.dumps({"message": "IMEI not registered please register first"}),
+                                        status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
-                    return Response(json.dumps({"message": "IMEIs association limit has been exceeded, i.e. Maximum number of IMIEs have been associated with this UID"}),
-                                    status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                    return Response(
+                        json.dumps({"message": "Maximum number of devices have already been associated with this UID"}),
+                        status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {
