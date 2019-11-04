@@ -63,12 +63,19 @@ global:
     - id
   default_language: en
 
+  #Grace period configuration
+  grace_period: true
+
+  #device association limit
+  association_limit: 10
+
 # DRS configurations for list generations
 # Configurations should be defined when deploying the software.
 lists:
   # directory path to generate the list,
   # only absolute paths to the directories are acceptable
   path: ''
+  ddcds_path: '/home/muazzama/Projects/CACF-Projects/Device-Registration-Subsystem/LISTS'
 
   # maximum number of workers used for the list generation
   # typically it should be 2 x num_of_cpus in the system

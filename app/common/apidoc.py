@@ -38,6 +38,7 @@ class ApiDocs:
                 version=self.version,
                 info={'description': self.spec_description()},
                 plugins=self.plugins,
+                openapi_version = '2.0'
             ),
             'APISPEC_SWAGGER_URL': self.swagger_json_url,
             'APISPEC_SWAGGER_UI_URL': self.swagger_url,

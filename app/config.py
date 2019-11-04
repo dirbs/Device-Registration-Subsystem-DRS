@@ -77,6 +77,7 @@ class ConfigApp:
         self.app.config['DRS_UPLOADS'] = global_config.get('upload_directory')  # file upload dir
         self.app.config['MAX_WORKERS'] = lists_config.get('max_workers')
         self.app.config['DRS_LISTS'] = lists_config.get('path')  # lists dir
+        self.app.config['DDCDS_LISTS'] = lists_config.get('ddcds_path')  # ddcds lists dir
         self.app.config['STRICT_HTTPS'] = self.config.get('server')['restrict_https']
         self.app.config['CORE_BASE_URL'] = global_config.get('core_api_v2')
         self.app.config['BABEL_DEFAULT_LOCALE'] = global_config.get('default_language')
@@ -87,6 +88,8 @@ class ConfigApp:
         self.app.config['SQLALCHEMY_POOL_RECYCLE'] = database_config.get('pool_recycle')
         self.app.config['SQLALCHEMY_MAX_OVERFLOW'] = database_config.get('max_overflow')
         self.app.config['SQLALCHEMY_POOL_TIMEOUT'] = database_config.get('pool_timeout')
+        self.app.config['GRACE_PERIOD'] = global_config.get('grace_period')
+        self.app.config['ASSOCIATION_LIMIT'] = int(global_config.get('association_limit'))
 
         self.app.config['CELERY_BROKER_URL'] = celery_config['RabbitmqUrl']
         self.app.config['result_backend'] = celery_config['RabbitmqBackend']
