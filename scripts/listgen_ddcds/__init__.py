@@ -1,4 +1,5 @@
 from flask_script import Command
+from scripts.listgen_ddcds.helper import Helper as Helper
 from scripts.listgen_ddcds.listgen_full import FullListGeneration
 from scripts.listgen_ddcds.listgen_delta import DeltaListGeneration
 

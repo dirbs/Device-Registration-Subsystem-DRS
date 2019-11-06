@@ -16,13 +16,9 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 """
 
 import json
-from sqlalchemy import text
-
-from app.api.v1.models.approvedimeis import ApprovedImeis
 
 # api urls
 DEASSOCIATION_API = 'api/v1/deassociate'
-ASSOCIATION_API = 'api/v1/associate'
 
 
 def test_with_invalid_params(flask_app, db):  # pylint: disable=unused-argument

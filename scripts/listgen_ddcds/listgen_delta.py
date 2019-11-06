@@ -1,5 +1,5 @@
-from .helper import Helper
 from app.api.v1.models.association import ImeiAssociation
+from scripts.listgen_ddcds import Helper
 
 
 class DeltaListGeneration:
@@ -17,7 +17,7 @@ class DeltaListGeneration:
                     delta_list = Helper.add_to_list(delta_list, i, "REMOVE")
                     ImeiAssociation.update_export_date(i.get('imei'), i.get('uid'))
         if len(delta_list):
-            Helper().upload_list(delta_list, "first-delta-list")
+            Helper().upload_list(delta_list, "ddcds-delta-list")
             return "Job Done."
         else:
             return "List was empty"

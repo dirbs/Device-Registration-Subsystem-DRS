@@ -36,7 +36,8 @@ class Helper:
                 report_name = name + self.current_time_stamp + '.csv'
                 full_list.to_csv(os.path.join(self.dir_path, report_name), sep=',', index=False)
                 self.logger.info("Full list saved successfully")
-                return "List " + report_name + " has been saved successfully."
+                self.logger.info("List " + report_name + " has been saved successfully.")
+                sys.exit(0)
             else:
                 self.logger.error('Error: please specify directory in config for lists')
                 self.logger.info('exiting .......')
