@@ -37,6 +37,12 @@ class AssociateImeisSchema(Schema):
         if len(value) > GLOBAL_CONF.get('max_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
 
+    @validates('uid')
+    def _validate_uid(self, value):
+        """Validator to validate uid field."""
+        if len(value) == 0:
+            raise ValidationError("UID is invalid", fields=['uid'])
+
 
 class AssociateDuplicateImeisSchema(Schema):
     """Schema for duplicate IMEI association."""
@@ -53,8 +59,14 @@ class AssociateDuplicateImeisSchema(Schema):
 
     @validates('imei')
     def _validate_imei(self, value):
-        """Validator to validate request_id field."""
+        """Validator to validate imei field."""
         if len(value) < GLOBAL_CONF.get('min_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
         if len(value) > GLOBAL_CONF.get('max_imei_length'):
             raise ValidationError("IMEI is invalid", fields=['imei'])
+
+    @validates('uid')
+    def _validate_uid(self, value):
+        """Validator to validate uid field."""
+        if len(value) == 0:
+            raise ValidationError("UID is invalid", fields=['uid'])
