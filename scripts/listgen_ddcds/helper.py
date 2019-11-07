@@ -6,36 +6,43 @@ from datetime import datetime
 
 from app import app
 from app.api.v1.models.association import ImeiAssociation
-from scripts.common import ScriptLogger
 
 
 class Helper:
 
-    def __init__(self):
+    def __init__(self, logger):
         """Constructor"""
         self.dir_path = app.config['DDCDS_LISTS']
         self.current_time_stamp = datetime.now().strftime("%m-%d-%YT%H%M%S")
-        self.logger = ScriptLogger('list_generator').get_logger()
+        self.logger = logger
 
-    @staticmethod
-    def get_imeis():
-        case_list = []
-        for row in ImeiAssociation.get_all_imeis():
-            case_list.append(dict((col, val) for col, val in row.items()))
-        return case_list
+    def get_imeis(self):
+        try:
+            case_list = []
+            self.logger.info("Extracting IMEIs to export...")
+            for row in ImeiAssociation.get_all_imeis():
+                case_list.append(dict((col, val) for col, val in row.items()))
+            return case_list
+        except Exception as e:
+            self.logger.critical("Exception occurred while extracting IMEIs from db.")
+            self.logger.exception(e)
 
-    @staticmethod
-    def add_to_list(full_list, imei, status):
-        full_list.append({"imei": imei['imei'], "reported_date": imei['start_date'], "status": status})
-        return full_list
+    def add_to_list(self, full_list, imei, status):
+        try:
+            full_list.append({"imei": imei['imei'], "reported_date": imei['start_date'], "status": status})
+            return full_list
+        except Exception as e:
+            self.logger.critical("Exception occurred while adding IMEIs to list.")
+            self.logger.exception(e)
 
     def upload_list(self, list, name):
         try:
+            self.logger.info("Checking if list directory exists...")
             if os.path.isdir(self.dir_path):
                 full_list = pd.DataFrame(list)
                 report_name = name + self.current_time_stamp + '.csv'
+                self.logger.info("Saving list to specified directory...")
                 full_list.to_csv(os.path.join(self.dir_path, report_name), sep=',', index=False)
-                self.logger.info("Full list saved successfully")
                 self.logger.info("List " + report_name + " has been saved successfully.")
                 sys.exit(0)
             else:

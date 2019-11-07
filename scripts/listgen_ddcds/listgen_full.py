@@ -1,28 +1,34 @@
 import sys
 from app.api.v1.models.association import ImeiAssociation
-from scripts.listgen_ddcds import Helper
+from scripts.listgen_ddcds.helper import Helper
 
 
 class FullListGeneration:
 
-    @staticmethod
-    def generate_full_list():
+    def __init__(self, logger):
+        """Constructor"""
+        self.logger = logger
+
+    def generate_full_list(self):
         try:
             full_list = []
-            imeis = Helper.get_imeis()
+            imeis = Helper(self.logger).get_imeis()
+            self.logger.info("Adding IMEIs to list and marking them as exported...")
             for i in imeis:
                 if not i.get('exported') and i.get('end_date') is None:
-                    full_list = Helper.add_to_list(full_list, i, "ADD")
+                    full_list = Helper(self.logger).add_to_list(full_list, i, "ADD")
                     ImeiAssociation.mark_exported(i.get('imei'), i.get('uid'))
+            self.logger.info("Checking if generated list contains IMEIs...")
             if len(full_list):
-                Helper().upload_list(full_list, "ddcds-full-list")
-                Helper().logger.info("Job Done.")
+                Helper(self.logger).upload_list(full_list, "ddcds-full-list")
+                self.logger.info("List has been generated and uploaded successfully.")
+                self.logger.info("exiting...")
                 sys.exit(0)
             else:
-                Helper().logger.info("No IMEI to be exported")
-                Helper().logger.info("exiting...")
+                self.logger.info("No IMEI to be exported")
+                self.logger.info("exiting...")
                 sys.exit(0)
         except Exception as e:
-            Helper().logger.exception("Exception occurred", e)
+            self.logger.exception("Exception occurred", e)
             sys.exit(0)
 
