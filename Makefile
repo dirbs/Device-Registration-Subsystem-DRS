@@ -73,6 +73,12 @@ genlist-delta:
 genlist-full:
 	python3 manage.py genlist --list full
 
+ddcds-genlist-delta:
+	python3 manage.py genlist-ddcds-delta
+
+ddcds-genlist-full:
+	python3 manage.py genlist-ddcds-full
+
 test:
 	pip3 install -r test_requirements.txt
 	python3 setup.py develop

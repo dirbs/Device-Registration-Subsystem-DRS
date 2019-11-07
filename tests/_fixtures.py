@@ -54,10 +54,6 @@ def app(mocked_config, tmpdir_factory):
 
     # initialize temp database and yield app
     postgresql = Postgresql()
-    dsn = postgresql.dsn()
-    # monkey patch database configs
-    for setting in ['user', 'password', 'port', 'host', 'database']:
-        mocked_config['database'][setting] = dsn.get(setting, '')
 
     # monkey patch temp dirs
     temp_lists = tmpdir_factory.mktemp('lists')
