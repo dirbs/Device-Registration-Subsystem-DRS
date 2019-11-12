@@ -24,7 +24,7 @@ class ImeiAssociation(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     imei = db.Column(db.String(14), nullable=False)
-    uid = db.Column(db.String(40), nullable=False)
+    uid = db.Column(db.String(20), nullable=False)
     start_date = db.Column(db.Date, server_default=db.func.now())
     end_date = db.Column(db.DateTime, server_default=None)
     duplicate = db.Column(db.Boolean, nullable=False)
