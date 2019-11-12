@@ -121,3 +121,8 @@ class ImeiAssociation(db.Model):
         query = 'select * from public.associatedimeis'
         results = db.engine.execute(query)
         return results
+
+    @staticmethod
+    def bulk_exists(imeis):
+        response = ImeiAssociation.query.filter_by(end_date=None).filter(ImeiAssociation.imei.in_(imeis)).count()
+        return response

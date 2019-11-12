@@ -34,6 +34,7 @@ from app.api.v1.models.technologies import Technologies
 from app.api.v1.models.approvedimeis import ApprovedImeis
 from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
 from app.api.v1.models.documents import Documents as ReqDocument
+from app.api.v1.models.association import ImeiAssociation
 from app.api.v1.schema.common import RequestStatusTypes
 from app.api.v1.schema.reviewer import UpdateReviewerArgs, SuccessResponse, SubmitSuccessResponse, ErrorResponse, \
     SectionReviewArgs, DeviceQuota as DeviceQuotaSchema, DeviceQuotaArgs, RequestTypes, DevicesDescription, \
@@ -998,7 +999,8 @@ class IMEIClassification(MethodResource):
         else:
             if DeRegDetails.exists(request_id):
                 request = DeRegDetails.get_by_id(request_id)
-
+                imeis = DeRegDetails.get_normalized_imeis(request)
+                count = ImeiAssociation.bulk_exists(imeis)
                 if request.summary is not None:
                     summary = json.loads(request.summary).get('summary')
                     res = {
@@ -1015,7 +1017,8 @@ class IMEIClassification(MethodResource):
                             'provisional_stolen': summary.get('provisional_stolen'),
                             'stolen': summary.get('stolen')
                         },
-                        'seen_on_network': summary.get('seen_on_network')
+                        'seen_on_network': summary.get('seen_on_network'),
+                        'associated_imeis': count
                     }
                     return Response(json.dumps(IMEIClassificationSchema().dump(res).data),
                                     status=200, mimetype='application/json')
