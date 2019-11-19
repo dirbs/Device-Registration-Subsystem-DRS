@@ -41,15 +41,16 @@ class AssociateImeis(MethodResource):
                 associated_devices = len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) if len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) is not None else int(0)
                 if associated_devices < app.config.get('ASSOCIATION_LIMIT'):
                     if ApprovedImeis.registered(kwargs.get('imei')):
-                        if ImeiAssociation.exists(kwargs.get('imei')):
+                        if ImeiAssociation.exists(kwargs.get('imei')) and ImeiAssociation.associated(kwargs.get('imei')):
                             if ImeiAssociation.detect_duplicate(kwargs.get('imei'), kwargs.get('uid')):
-                                return Response(json.dumps({"message": "imei already associated associated wih the same uid"}),
+                                return Response(json.dumps({"message": "IMEI already associated wih the same uid"}),
                                                 status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                             elif app.config.get('GRACE_PERIOD'):
-                                return Response(json.dumps({"message": "imei already associated you want to associate duplicate?"}),
+                                return Response(json.dumps({"message": "IMEI already associated you want to associate duplicate?"}),
                                                 status=CODES.get("OK"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
-                            return Response(json.dumps({"message": "imei already associated"}), status=CODES.get("CONFLICT"),
-                                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                            else:
+                                return Response(json.dumps({"message": "imei already associated"}), status=CODES.get("CONFLICT"),
+                                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                         else:
                             ImeiAssociation(imei=kwargs.get('imei'), uid=kwargs.get('uid'), duplicate=False).add()
                             return Response(json.dumps({"message": "IMEI has been associated with the given Uid"}),
@@ -107,7 +108,7 @@ class AssociateDuplicate(MethodResource):
                     return Response(json.dumps({"message": "IMEI has been associated as duplicate."}),
                                     status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
-                    return Response(json.dumps({"message": "IMEI already associated please ask seller to deassociate first."}),
+                    return Response(json.dumps({"message": "IMEI already associated."}),
                                     status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)

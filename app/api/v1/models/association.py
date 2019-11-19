@@ -25,7 +25,7 @@ class ImeiAssociation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     imei = db.Column(db.String(14), nullable=False)
     uid = db.Column(db.String(20), nullable=False)
-    start_date = db.Column(db.Date, server_default=db.func.now())
+    start_date = db.Column(db.DateTime, server_default=db.func.now())
     end_date = db.Column(db.DateTime, server_default=None)
     duplicate = db.Column(db.Boolean, nullable=False)
     exported_at = db.Column(db.DateTime, server_default=None)
@@ -75,10 +75,17 @@ class ImeiAssociation(db.Model):
         return False
 
     @staticmethod
+    def associated(imei_norm):
+        """Check if an imei exists"""
+        if ImeiAssociation.query.filter_by(imei=imei_norm).filter_by(end_date=None).first():
+            return True
+        return False
+
+    @staticmethod
     def deassociate(imei, uid):
         """Method to de-associate IMEI from given uid"""
         try:
-            exists = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
+            exists = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).order_by(ImeiAssociation.start_date.desc()).first()
             if exists:
                 if exists.end_date is None:
                     exists.end_date = db.func.now()
