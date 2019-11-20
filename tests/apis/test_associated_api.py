@@ -93,7 +93,7 @@ def test_with_same_imei_again(flask_app):
     rv = flask_app.post(ASSOCIATION_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 409
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['message'] == "imei already associated associated wih the same uid"
+    assert data['message'] == "IMEI already associated wih the same uid"
 
 
 def test_with_unregistered_imei(flask_app):
@@ -117,7 +117,7 @@ def test_with_duplicate_imei(flask_app):
     rv = flask_app.post(ASSOCIATION_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['message'] == 'imei already associated you want to associate duplicate?'
+    assert data['message'] == 'IMEI already associated you want to associate duplicate?'
 
 
 def test_device_limit(flask_app):
@@ -152,7 +152,7 @@ def test_grace_period(flask_app):
     rv = flask_app.post(ASSOCIATION_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['message'] == 'imei already associated you want to associate duplicate?'
+    assert data['message'] == 'IMEI already associated you want to associate duplicate?'
 
     body_data = {
         "imei": "76545678906548",
