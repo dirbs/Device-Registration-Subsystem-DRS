@@ -33,12 +33,6 @@ def test_with_invalid_params(flask_app, db):  # pylint: disable=unused-argument
     rv = flask_app.post(ASSOCIATION_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 422
 
-    body_data = {
-        "imei": "35282004001202"
-    }
-    rv = flask_app.post(ASSOCIATION_API, data=json.dumps(body_data), headers=headers)
-    assert rv.status_code == 422
-
 
 def test_put_method_not_allowed(flask_app):
     """Verify that PUT method is not allowed."""
@@ -67,9 +61,6 @@ def test_bulk_insert_imeis():  # pylint: disable=unused-argument
     delta_status = 'delta status'
     imeis = [ApprovedImeis(imei, request_id, status, delta_status) for imei in imei_list]
     ApprovedImeis.bulk_insert_imeis(imeis)
-    # imei_data = session.execute(text("""SELECT * FROM public.approvedimeis"""))
-    # for imei in imei_data:
-    #     print(imei)
 
 
 def test_association(flask_app):

@@ -32,20 +32,8 @@ def test_with_invalid_params(flask_app, db):  # pylint: disable=unused-argument
     assert rv.status_code == 422
 
     body_data = {
-        "imei": "35282004001202"
-    }
-    rv = flask_app.post(DEASSOCIATION_API, data=json.dumps(body_data), headers=headers)
-    assert rv.status_code == 422
-
-    body_data = {
         "imei": "35282004001202",
         "uid": ""
-    }
-    rv = flask_app.post(DEASSOCIATION_API, data=json.dumps(body_data), headers=headers)
-    assert rv.status_code == 422
-
-    body_data = {
-        "uid": "123456780987643"
     }
     rv = flask_app.post(DEASSOCIATION_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 422
