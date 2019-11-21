@@ -133,7 +133,7 @@ class AssociateDuplicate(MethodResource):
                                 {"message": "Maximum number of devices have already been associated with this UID"}),
                             status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
-                    return Response(json.dumps({"message": "IMEI already associated."}),
+                    return Response(json.dumps({"message": "OK."}),
                                     status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
