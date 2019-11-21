@@ -43,7 +43,7 @@ class AssociateImeisSchema(Schema):
         """Validator to validate uid field."""
         if len(value) == 0:
             raise ValidationError("UID is invalid", fields=['uid'])
-        match = re.match('^[a-fA-F0-9]{10,20}$', value)
+        match = re.match('^[a-zA-Z0-9\x2d]{10,20}$', value)
         if match is None:
             raise ValidationError("UID format is invalid", fields=['uid'])
 
@@ -74,6 +74,6 @@ class AssociateDuplicateImeisSchema(Schema):
         """Validator to validate uid field."""
         if len(value) == 0:
             raise ValidationError("UID is invalid", fields=['uid'])
-        match = re.match(r'^[a-fA-F0-9]{10,20}$', value)
+        match = re.match(r'^[a-zA-Z0-9\x2d]{10,20}$', value)
         if match is None:
             raise ValidationError("UID format is invalid", fields=['uid'])

@@ -41,7 +41,7 @@ class AssociateImeis(MethodResource):
                 associated_devices = len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) if len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) is not None else int(0)
                 if associated_devices < app.config.get('ASSOCIATION_LIMIT'):
                     if ApprovedImeis.registered(kwargs.get('imei')):
-                        if ImeiAssociation.exists(kwargs.get('imei')) and ImeiAssociation.associated(kwargs.get('imei')):
+                        if ImeiAssociation.associated(kwargs.get('imei')):
                             if ImeiAssociation.detect_duplicate(kwargs.get('imei'), kwargs.get('uid')):
                                 return Response(json.dumps({"message": "IMEI already associated wih the same uid"}),
                                                 status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
@@ -76,7 +76,7 @@ class AssociateImeis(MethodResource):
         """GET method handler, returns list IMEI associated with given UID."""
         try:
             response = ImeiAssociation.get_imei_by_uid(uid)
-            associations = [{"imei":row.imei, "uid":row.imei, "start_date":str(row.start_date)} for row in response]
+            associations = [{"imei":row.imei, "uid":row.uid, "start_date":row.start_date.strftime("%Y-%m-%d %H:%M:%S")} for row in response]
             return Response(json.dumps(associations), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
@@ -104,9 +104,34 @@ class AssociateDuplicate(MethodResource):
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
                 if kwargs.get('choice'):
-                    ImeiAssociation(imei=kwargs.get('imei'), uid=kwargs.get('uid'), duplicate=True).add()
-                    return Response(json.dumps({"message": "IMEI has been associated as duplicate."}),
-                                    status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                    associated_devices = len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) if len(ImeiAssociation.get_imei_by_uid(kwargs.get('uid'))) is not None else int(0)
+                    if associated_devices < app.config.get('ASSOCIATION_LIMIT'):
+                        if ApprovedImeis.registered(kwargs.get('imei')):
+                            if ImeiAssociation.associated(kwargs.get('imei')):
+                                if ImeiAssociation.detect_duplicate(kwargs.get('imei'), kwargs.get('uid')):
+                                    return Response(json.dumps({"message": "IMEI already associated wih the same uid"}),
+                                                    status=CODES.get("CONFLICT"),
+                                                    mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                                elif app.config.get('GRACE_PERIOD'):
+                                    ImeiAssociation(imei=kwargs.get('imei'), uid=kwargs.get('uid'), duplicate=True).add()
+                                    return Response(json.dumps({"message": "IMEI has been associated as duplicate."}),
+                                                    status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                                else:
+                                    return Response(json.dumps({"message": "duplicate IMEI cannot be associated"}),
+                                                    status=CODES.get("CONFLICT"),
+                                                    mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                            else:
+                                return Response(json.dumps({"message": "IMEI not associated hence cannot be associated as duplicate."}),
+                                                status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                        else:
+                            return Response(json.dumps({"message": "IMEI not registered please register first"}),
+                                            status=CODES.get("NOT_ACCEPTABLE"),
+                                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                    else:
+                        return Response(
+                            json.dumps(
+                                {"message": "Maximum number of devices have already been associated with this UID"}),
+                            status=CODES.get("NOT_ACCEPTABLE"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
                     return Response(json.dumps({"message": "IMEI already associated."}),
                                     status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))

@@ -63,7 +63,7 @@ class ImeiAssociation(db.Model):
     @staticmethod
     def detect_duplicate(imei, uid):
         """Method to check if imei already associated with given uid"""
-        if ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first():
+        if ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).first():
             return True
         return False
 
