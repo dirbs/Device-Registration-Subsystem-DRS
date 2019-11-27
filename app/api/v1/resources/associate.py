@@ -46,8 +46,12 @@ class AssociateImeis(MethodResource):
                                 return Response(json.dumps({"message": "IMEI already associated wih the same uid"}),
                                                 status=CODES.get("CONFLICT"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                             elif app.config.get('GRACE_PERIOD'):
-                                return Response(json.dumps({"message": "IMEI already associated you want to associate duplicate?"}),
-                                                status=CODES.get("OK"), mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+                                return Response(
+                                    json.dumps(
+                                        {"message": "IMEI already associated you want to associate duplicate?",
+                                         "is_associated": True}),
+                                    status=CODES.get("OK"),
+                                    mimetype=MIME_TYPES.get('APPLICATION_JSON'))
                             else:
                                 return Response(json.dumps({"message": "imei already associated"}), status=CODES.get("CONFLICT"),
                                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))

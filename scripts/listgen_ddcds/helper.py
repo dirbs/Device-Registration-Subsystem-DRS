@@ -27,13 +27,22 @@ class Helper:
             self.logger.critical("Exception occurred while extracting IMEIs from db.")
             self.logger.exception(e)
 
-    def add_to_list(self, full_list, imei, status):
+    def add_to_delta_list(self, full_list, imei, status):
         try:
-            full_list.append({"imei": imei['imei'], "reported_date": imei['start_date'], "status": status})
+            full_list.append({"imei": imei['imei'], "uid": imei['uid'], "change_type": status})
             return full_list
         except Exception as e:
             self.logger.critical("Exception occurred while adding IMEIs to list.")
             self.logger.exception(e)
+
+    def add_to_full_list(self, full_list, imei):
+        try:
+            full_list.append({"imei": imei['imei'], "uid": imei['uid']})
+            return full_list
+        except Exception as e:
+            self.logger.critical("Exception occurred while adding IMEIs to list.")
+            self.logger.exception(e)
+
 
     def upload_list(self, list, name):
         try:
