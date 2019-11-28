@@ -17,7 +17,7 @@ class FullListGeneration:
             for i in imeis:
                 if i.get('end_date') is None:
                     full_list = Helper(self.logger).add_to_full_list(full_list, i)
-                    ImeiAssociation.mark_exported(i.get('imei'), i.get('uid'))
+                    ImeiAssociation.mark_exported(i.get('id'))
             self.logger.info("Checking if generated list contains IMEIs...")
             if len(full_list):
                 Helper(self.logger).upload_list(full_list, "ddcds-full-list")

@@ -17,11 +17,11 @@ class DeltaListGeneration:
             for i in imeis:
                 if not i.get('exported') and i.get('end_date') is None:
                     delta_list = Helper(self.logger).add_to_delta_list(delta_list, i, "add")
-                    ImeiAssociation.mark_exported(i.get('imei'), i.get('uid'))
+                    ImeiAssociation.mark_exported(i.get('id'))
                 elif i.get('exported') and i.get('end_date'):
                     if i.get('exported_at') < i.get('end_date'):
                         delta_list = Helper(self.logger).add_to_delta_list(delta_list, i, "remove")
-                        ImeiAssociation.update_export_date(i.get('imei'), i.get('uid'))
+                        ImeiAssociation.update_export_date(i.get('id'))
             self.logger.info("Checking if generated list contains IMEIs...")
             if len(delta_list):
                 Helper(self.logger).upload_list(delta_list, "ddcds-delta-list")

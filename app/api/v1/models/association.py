@@ -100,10 +100,10 @@ class ImeiAssociation(db.Model):
             raise Exception
 
     @staticmethod
-    def update_export_date(imei, uid):
+    def update_export_date(id):
         """Method to update exported_at when IMEI is exported"""
         try:
-            associated_imeis = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).first()
+            associated_imeis = ImeiAssociation.query.filter_by(id=id).first()
             associated_imeis.exported_at = db.func.now()
             db.session.commit()
         except Exception:
@@ -111,10 +111,10 @@ class ImeiAssociation(db.Model):
             raise Exception
 
     @staticmethod
-    def mark_exported(imei, uid):
+    def mark_exported(id):
         """Method to mark IMEI as exported"""
         try:
-            exported_imei = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).first()
+            exported_imei = ImeiAssociation.query.filter_by(id=id).first()
             exported_imei.exported_at = db.func.now()
             exported_imei.exported = True
             db.session.commit()
