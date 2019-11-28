@@ -30,7 +30,11 @@ class Helper:
 
     def add_to_delta_list(self, full_list, imei, status):
         try:
-            full_list.append(OrderedDict({"uid": imei['uid'], "imei": imei['imei'], "change_type": status}))
+            delta_dict = OrderedDict()
+            delta_dict['uid'] = imei['uid']
+            delta_dict['imei'] = imei['imei']
+            delta_dict['change_type'] = status
+            full_list.append(delta_dict)
             return full_list
         except Exception as e:
             self.logger.critical("Exception occurred while adding IMEIs to list.")
@@ -38,7 +42,10 @@ class Helper:
 
     def add_to_full_list(self, full_list, imei):
         try:
-            full_list.append(OrderedDict({"uid": imei['uid'], "imei": imei['imei']}))
+            full_dict = OrderedDict()
+            full_dict['uid'] = imei['uid']
+            full_dict['imei'] = imei['imei']
+            full_list.append(full_dict)
             return full_list
         except Exception as e:
             self.logger.critical("Exception occurred while adding IMEIs to list.")
