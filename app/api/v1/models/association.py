@@ -114,7 +114,7 @@ class ImeiAssociation(db.Model):
     def mark_exported(imei, uid):
         """Method to mark IMEI as exported"""
         try:
-            exported_imei = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).filter_by(exported=False).first()
+            exported_imei = ImeiAssociation.query.filter_by(imei=imei).filter_by(uid=uid).filter_by(end_date=None).first()
             exported_imei.exported_at = db.func.now()
             exported_imei.exported = True
             db.session.commit()

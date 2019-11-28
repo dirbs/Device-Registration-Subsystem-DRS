@@ -15,7 +15,7 @@ class FullListGeneration:
             imeis = Helper(self.logger).get_imeis()
             self.logger.info("Adding IMEIs to list and marking them as exported...")
             for i in imeis:
-                if not i.get('exported') and i.get('end_date') is None:
+                if i.get('end_date') is None:
                     full_list = Helper(self.logger).add_to_full_list(full_list, i)
                     ImeiAssociation.mark_exported(i.get('imei'), i.get('uid'))
             self.logger.info("Checking if generated list contains IMEIs...")

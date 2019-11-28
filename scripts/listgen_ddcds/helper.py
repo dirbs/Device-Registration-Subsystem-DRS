@@ -3,6 +3,7 @@ import sys
 
 import pandas as pd
 from datetime import datetime
+from collections import OrderedDict
 
 from app import app
 from app.api.v1.models.association import ImeiAssociation
@@ -29,7 +30,7 @@ class Helper:
 
     def add_to_delta_list(self, full_list, imei, status):
         try:
-            full_list.append({"imei": imei['imei'], "uid": imei['uid'], "change_type": status})
+            full_list.append(OrderedDict({"uid": imei['uid'], "imei": imei['imei'], "change_type": status}))
             return full_list
         except Exception as e:
             self.logger.critical("Exception occurred while adding IMEIs to list.")
@@ -37,7 +38,7 @@ class Helper:
 
     def add_to_full_list(self, full_list, imei):
         try:
-            full_list.append({"imei": imei['imei'], "uid": imei['uid']})
+            full_list.append(OrderedDict({"uid": imei['uid'], "imei": imei['imei']}))
             return full_list
         except Exception as e:
             self.logger.critical("Exception occurred while adding IMEIs to list.")
