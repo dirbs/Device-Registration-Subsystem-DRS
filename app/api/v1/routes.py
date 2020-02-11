@@ -36,6 +36,8 @@ from app.api.v1.resources.reports import ImeiReport, GetDashBoardReports, SetIme
 from app.api.v1.resources.regdetails import RegSectionRoutes
 from app.api.v1.resources.deregdetails import DeRegSectionRoutes
 from app.api.v1.resources.restart_process import RegistrationProcessRestart, DeRegistrationProcessRestart
+from .resources.deassociate import DeassociateImeis
+from .resources.associate import AssociateImeis, AssociateDuplicate
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
 apidoc = ApiDocs(app, 'v1')
@@ -99,6 +101,13 @@ api.add_resource(HealthCheck, '/healthcheck')
 # version
 api.add_resource(Version, '/version')
 
+api.add_resource(DeassociateImeis, '/deassociate')
+
+api.add_resource(AssociateImeis, '/associate', '/associate/<uid>')
+
+api.add_resource(AssociateDuplicate, '/associate_duplicate')
+
+
 docs = apidoc.init_doc()
 
 
@@ -106,5 +115,6 @@ def register_docs():
     """Method to register routes for docs."""
     for route in [AssignReviewer, DeviceQuota, ReviewSection, DeviceDescription, IMEIRegistrationStatus,
                   RequestDocuments, Files, Sections, SubmitReview, IMEIClassification, UnAssignReviewer,
-                  ServerConfigs, Notification, HealthCheck, Version]:
+                  ServerConfigs, Notification, HealthCheck, Version, DeassociateImeis, AssociateImeis,
+                  AssociateDuplicate]:
         docs.register(route)

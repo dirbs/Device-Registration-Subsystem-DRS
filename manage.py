@@ -24,6 +24,8 @@ from app import app, db
 from scripts.db import CreateDatabase
 from scripts.db import Seed
 from scripts.listgen import ListGenerator
+from scripts.listgen_ddcds import ListGenerationFull
+from scripts.listgen_ddcds import ListGenerationDelta
 
 
 migrate = Migrate(app, db)
@@ -32,6 +34,8 @@ manager.add_command('db', MigrateCommand)
 manager.add_command('install-db', CreateDatabase(db))
 manager.add_command('seed-db', Seed(db))
 manager.add_command('genlist', ListGenerator(db))
+manager.add_command('genlist-ddcds-full', ListGenerationFull)
+manager.add_command('genlist-ddcds-delta', ListGenerationDelta)
 
 
 if __name__ == '__main__':

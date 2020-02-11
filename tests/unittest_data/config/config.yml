@@ -47,6 +47,12 @@ global:
   #maximum on imei per device
   max_imei_per_device: 5
 
+  #Grace period configuration
+  grace_period: true
+
+  #device association limit
+  association_limit: 10
+
   #URLS
   core_api_v1: 'http://test-core-base-api:5000/api/v1/'
   core_api_v2: 'http://test-core-base-api:5000/api/v2/'

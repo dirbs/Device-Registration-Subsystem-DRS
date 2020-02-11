@@ -384,3 +384,4 @@ class IMEIClassification(Schema):
     per_condition_classification_state = fields.Dict(required=True)
     lost_stolen_status = fields.Nested(IMEILostStolenCount, required=True)
     seen_on_network = fields.Integer(required=True)
+    associated_imeis = fields.Integer()
