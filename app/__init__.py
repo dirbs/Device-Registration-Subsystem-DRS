@@ -29,6 +29,9 @@ from flask_babel import Babel
 from app.config import ConfigParser, ParseException, ConfigApp
 from app.serializer import JSONEncoder
 
+import json
+# from app.api.v1.helpers.reports_generator import BulkCommonResources
+
 # import _strptime to avoid weird issues as described at
 # http://bugs.python.org/msg221094
 datetime.strptime('', '')
@@ -51,9 +54,10 @@ except ParseException as e:
 
 CORE_BASE_URL = config['dirbs_core']['base_url']  # core api base url
 GLOBAL_CONF = config['global']  # load & export global configs
-app = ConfigApp(app, config).load_config()  # load configurations to the app instance
-db = SQLAlchemy(session_options={'autocommit': False})
 
+app = ConfigApp(app, config).load_config()  # load configurations to the app instance
+
+db = SQLAlchemy(session_options={'autocommit': False})
 db.init_app(app)
 
 # requests session

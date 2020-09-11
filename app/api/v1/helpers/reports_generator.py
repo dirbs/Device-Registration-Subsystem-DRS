@@ -85,16 +85,20 @@ class BulkCommonResources:  # pragma: no cover
         try:
             while imeis:
                 imei = imeis.pop(-1)  # pop the last item from queue
+               
                 try:
                     if imei:
                         batch_req = {
-                            "imeis": imei
+                            "imeis": imei,
+                            "include_registration_status": True,
+                            "include_stolen_status": True
                         }
                         headers = {'content-type': 'application/json', 'charset': 'utf-8', 'keep_alive': 'false'}
-                        app.logger.info('{}/imei-batch'.format(app.config['CORE_BASE_URL']))
-                        imei_response = session.post('{}/imei-batch'.format(app.config['CORE_BASE_URL']),
+                        app.logger.info('{}/imei-batch'.format(app.config['CORE_BASE_URL']+app.config['API_VERSION']))
+                        imei_response = session.post('{}/imei-batch'.format(app.config['CORE_BASE_URL']+app.config['API_VERSION']),
                                                      data=json.dumps(batch_req),
                                                      headers=headers)  # dirbs core batch api call
+                        
                         if imei_response.status_code == 200:
                             imei_response = imei_response.json()
                             records.extend(imei_response['results'])
@@ -301,7 +305,7 @@ class BulkCommonResources:  # pragma: no cover
     @staticmethod
     def populate_reasons(blocking, reasons_list):
         """Return reasons for IMEI to be non compliant."""
-
+        return blocking
         try:
             voilating_conditions = [key['condition_name'] for key in blocking if key['condition_met']]
             for condition in app.config['conditions']:
