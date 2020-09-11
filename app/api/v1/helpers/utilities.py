@@ -88,8 +88,8 @@ class Utilities:
     def generate_summary(cls, imeis, tracking_id):
         """Method to get compliance summary and report."""
         try:
-            # response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id))
-            response = BulkCommonResources.get_summary(imeis, tracking_id)
+            response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id))
+            # response = BulkCommonResources.get_summary(imeis, tracking_id)
             return response.id
         except Exception as e:
             app.logger.exception(e)

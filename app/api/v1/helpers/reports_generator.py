@@ -305,7 +305,6 @@ class BulkCommonResources:  # pragma: no cover
     @staticmethod
     def populate_reasons(blocking, reasons_list):
         """Return reasons for IMEI to be non compliant."""
-        return blocking
         try:
             voilating_conditions = [key['condition_name'] for key in blocking if key['condition_met']]
             for condition in app.config['conditions']:

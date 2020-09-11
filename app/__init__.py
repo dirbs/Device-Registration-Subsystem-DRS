@@ -29,9 +29,6 @@ from flask_babel import Babel
 from app.config import ConfigParser, ParseException, ConfigApp
 from app.serializer import JSONEncoder
 
-import json
-# from app.api.v1.helpers.reports_generator import BulkCommonResources
-
 # import _strptime to avoid weird issues as described at
 # http://bugs.python.org/msg221094
 datetime.strptime('', '')
