@@ -178,6 +178,7 @@ class BulkCommonResources:  # pragma: no cover
                 response['seen_on_network'] = seen_on_network
                 response['stolen'] = stolen
                 response['compliant_report_name'] = data['filename']
+                response['id'] = tracking_id
             return response
         except Exception as e:
             raise e
