@@ -118,3 +118,8 @@ config.ini
 #uploads
 uploads
 drs-env
+app/translations/en/LC_MESSAGES/messages.po
+app/translations/es/LC_MESSAGES/messages.po
+app/translations/in/LC_MESSAGES/messages.po
+app/translations/es/LC_MESSAGES/messages.po
+app/translations/es/LC_MESSAGES/messages.po

@@ -410,7 +410,7 @@ class Utilities:
 
         This method expect a SET of tacs.
         """
-        request_url = '{base_url}/tac'.format(base_url=app.config['CORE_BASE_URL'])
+        request_url = '{base_url}{api}/tac'.format(base_url=app.config['CORE_BASE_URL'], api=app.config['API_VERSION'])
         if type(tacs) is not list:
             raise ValueError('Bad argument format for tacs')
         else:
