@@ -231,7 +231,7 @@ class Utilities:
     @classmethod
     def get_gsma_device(cls, tacs):
         """Method to get device details from CORE GSMA TAC API."""
-        tac_url = app.config['CORE_BASE_URL'] + '/tac'
+        tac_url = app.config['CORE_BASE_URL'] + app.config['API_VERSION'] +'/tac'
         tacs = {"tacs": tacs}
         response = requests.post(url=tac_url, json=tacs)
         return response.json()
