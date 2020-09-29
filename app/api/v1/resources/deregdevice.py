@@ -88,7 +88,7 @@ class DeRegDeviceRoutes(Resource):
                 created = DeRegDevice.bulk_create(args, dereg)
                 device_id_tac_map = Utilities.get_id_tac_map(created)
                 devices = device_schema.dump(created, many=True)
-                dereg.update_status('Awaiting Documents')
+                dereg.update_status('Awaiting Documents') # TODO: Change status if automate check is enables
                 db.session.commit()
                 DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
                 response = {'devices': devices.data, 'dreg_id': dereg.id}

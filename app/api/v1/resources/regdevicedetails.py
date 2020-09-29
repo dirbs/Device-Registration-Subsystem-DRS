@@ -14,7 +14,7 @@ Redistribution and use in source and binary forms, with or without modification,
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import json
-
+import ast
 from flask import Response, request
 from flask_restful import Resource
 from marshmallow import ValidationError
@@ -70,6 +70,15 @@ class DeviceDetailsRoutes(Resource):
             args = request.form.to_dict()
             schema = DeviceDetailsSchema()
             reg_details = RegDetails.get_by_id(reg_id)
+
+            if app.config['USE_GSMA_DEVICE_INFO']:
+                get_gsma_info = ast.literal_eval(reg_details.imeis)
+                device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
+                args.update({'brand' : device['brand']})
+                args.update({'operating_system' : device['operating_system']})
+                args.update({'model_name' : device['marketing_name']})
+                args.update({'model_num' : device['model_name']})
+
             if reg_details:
                 args.update({'reg_details_id': reg_details.id})
             else:
@@ -83,7 +92,8 @@ class DeviceDetailsRoutes(Resource):
             reg_device.technologies = DeviceTechnology.create(reg_device.id, args.get('technologies'))
             response = schema.dump(reg_device, many=False).data
             response['reg_details_id'] = reg_details.id
-            reg_details.update_status('Awaiting Documents')
+            device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+            reg_details.update_status(device_status)
             db.session.commit()
             Device.create(reg_details, reg_device.id)
             return Response(json.dumps(response), status=CODES.get("OK"),
@@ -103,6 +113,27 @@ class DeviceDetailsRoutes(Resource):
             db.session.close()
 
     @staticmethod
+    def put_gsma_device_info(get_gsma_info):
+        from app.api.v1.helpers.utilities import Utilities
+        device = {}
+        for tac in get_gsma_info:
+            get_gsma_info = tac[0][:8]
+            break
+
+        device_info = Utilities.get_gsma_device(get_gsma_info)
+
+        if device_info['results'][0]['gsma']:
+            device_info = device_info['results'][0]['gsma']
+            device["brand"] = device_info['brand_name']
+            device["operating_system"] = device_info['operating_system']
+            device["model_name"] = device_info['model_name']
+            device["marketing_name"] = device_info['marketing_name']
+            return device
+        else:
+            return False
+
+
+    @staticmethod
     def put():
         """PUT method handler, updates a device."""
         reg_id = request.form.to_dict().get('reg_id', None)
@@ -115,6 +146,14 @@ class DeviceDetailsRoutes(Resource):
             schema = DeviceDetailsUpdateSchema()
             reg_details = RegDetails.get_by_id(reg_id)
             reg_device = RegDevice.get_device_by_registration_id(reg_id)
+
+            if app.config['USE_GSMA_DEVICE_INFO']:
+                get_gsma_info = ast.literal_eval(reg_details.imeis)
+                device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
+                args.update({'brand' : device['brand']})
+                args.update({'operating_system' : device['operating_system']})
+                args.update({'model_name' : device['marketing_name']})
+                args.update({'model_num' : device['model_name']})
 
             if reg_details:
                 args.update({'reg_details_id': reg_details.id, 'status': reg_details.status})

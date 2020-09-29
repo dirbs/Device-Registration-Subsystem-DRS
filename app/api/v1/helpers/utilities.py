@@ -29,6 +29,8 @@ from app import GLOBAL_CONF, db, app, CORE_BASE_URL
 from app.api.v1.helpers.fileprocessor import Processor
 from app.api.v1.models.approvedimeis import ApprovedImeis
 from app.api.v1.helpers.reports_generator import BulkCommonResources
+# from app.api.v1.models.regdetails import RegDetails
+# from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
 
 
 class Utilities:
@@ -188,15 +190,35 @@ class Utilities:
                 result = task.get()
                 req.summary = json.dumps({'summary': result})
                 req.report = result.get('compliant_report_name')
-                req.update_report_status('Processed')
+
+                if not app.config['AUTOMATE_IMEI_CHECK']:
+                    req.update_report_status('Processed')
+
                 req.save()
                 db.session.commit()
                 app.logger.info('task_id:{0}-request_id:{1}-status:COMPLETED'.
                                 format(task_id, req.id, task.state))
             except Exception as e:
                 db.session.rollback()
-                req.update_report_status('Failed')
+
+                if not app.config['AUTOMATE_IMEI_CHECK']:
+                    req.update_report_status('Failed')
+
                 db.session.commit()
+
+    @staticmethod
+    def check_request_status(task_id):
+        task = BulkCommonResources.get_summary.AsyncResult(task_id)
+
+        while task.state != 'SUCCESS':
+            task = BulkCommonResources.get_summary.AsyncResult(task_id)
+
+        if task.state == 'SUCCESS':
+            result = task.get()
+            return result
+        else:
+            return False
+
 
     @classmethod
     def bulk_normalize(cls, imeis):

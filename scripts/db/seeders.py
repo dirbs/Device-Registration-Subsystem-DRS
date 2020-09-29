@@ -20,6 +20,8 @@ from flask_script import Command  # pylint: disable=deprecated-module
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.models import technologies, documents, status, devicetype
+from app import ConfigParser
+
 
 
 class Seed(Command):
@@ -72,14 +74,22 @@ class Seed(Command):
 
     def seed_documents(self):
         """Method to seed supported documents to the database."""
+        # read and load DRS base configuration to the app
         try:
+            config = ConfigParser('etc/config.yml').parse_config()
+        except ParseException as e:
+            app.logger.critical('exception encountered while parsing the config file, see details below')
+            app.logger.exception(e)
+            sys.exit(1)
+        try:
+            automate_imei_check = False if config['automate_imei_check'] else True
             objects = [
-                documents.Documents(id=1, label='shipment document', type=1, required=True),
-                documents.Documents(id=2, label='authorization document', type=1, required=True),
-                documents.Documents(id=3, label='certificate document', type=1, required=True),
-                documents.Documents(id=4, label='shipment document', type=2, required=True),
-                documents.Documents(id=5, label='authorization document', type=2, required=True),
-                documents.Documents(id=6, label='certificate document', type=2, required=True)
+                documents.Documents(id=1, label='shipment document', type=1, required=automate_imei_check ),
+                documents.Documents(id=2, label='authorization document', type=1, required=automate_imei_check),
+                documents.Documents(id=3, label='certificate document', type=1, required=automate_imei_check),
+                documents.Documents(id=4, label='shipment document', type=2, required=automate_imei_check),
+                documents.Documents(id=5, label='authorization document', type=2, required=automate_imei_check),
+                documents.Documents(id=6, label='certificate document', type=2, required=automate_imei_check)
             ]
 
             sql = "select count(*) from documents"

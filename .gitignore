@@ -36,6 +36,8 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+/etc/config.yml
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -121,5 +123,3 @@ drs-env
 app/translations/en/LC_MESSAGES/messages.po
 app/translations/es/LC_MESSAGES/messages.po
 app/translations/in/LC_MESSAGES/messages.po
-app/translations/es/LC_MESSAGES/messages.po
-app/translations/es/LC_MESSAGES/messages.po

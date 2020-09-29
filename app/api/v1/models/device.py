@@ -20,6 +20,7 @@ from app import db
 from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.models.approvedimeis import ApprovedImeis
 from app.api.v1.models.imeidevice import ImeiDevice
+from app.api.v1.models.regdetails import RegDetails
 
 
 class Device(db.Model):
@@ -33,7 +34,7 @@ class Device(db.Model):
 
     imeis = db.relationship('ImeiDevice', backref='device', passive_deletes=True, lazy=True)
 
-    def __init__(self, tac,  reg_details_id, reg_device_id):
+    def __init__(self, tac, reg_details_id, reg_device_id):
         """Constructor."""
         self.tac = tac
         self.reg_details_id = reg_details_id
@@ -47,7 +48,7 @@ class Device(db.Model):
         # reg_tac.create(bind=engine)
 
     @classmethod
-    def async_bulk_create(cls, reg_details, reg_device_id, app):   # pragma: no cover
+    def async_bulk_create(cls, reg_details, reg_device_id, app):  # pragma: no cover
         """Create devices async."""
         with app.app_context():
             from app import db
@@ -80,19 +81,24 @@ class Device(db.Model):
                 db.session.commit()
                 task_id = Utilities.generate_summary(imeis, reg_details.tracking_id)
                 app.logger.info('task with task_id: {0} initiated'.format(task_id))
-                if not task_id:
+                if task_id:
+                    Utilities.pool_summary_request(task_id, reg_details, app)
+                else:
                     reg_details.update_report_status('Failed')
                     app.logger.info('task with task_id: {0} failed'.format(task_id))
                     db.session.commit()
-                else:
-                    Utilities.pool_summary_request(task_id, reg_details, app)
+
+                if app.config['AUTOMATE_IMEI_CHECK']:
+                    if Device.auto_approve(task_id, reg_details, imeis, app):
+                        print("Auto Approved/Rejected Application Id:" + str(reg_details.id))
+
             except Exception as e:
-                app.logger.exception(e)
+                # app.logger.exception(e)
                 db.session.rollback()
-                reg_details.update_report_status('Failed')
                 reg_details.update_processing_status('Failed')
+                reg_details.update_report_status('Failed')
                 db.session.commit()
-                raise e
+                # raise e
 
     @classmethod
     def sync_bulk_create(cls, reg_details, reg_device_id, app):
@@ -126,9 +132,78 @@ class Device(db.Model):
             else:
                 reg_details.update_report_status('Failed')
                 db.session.commit()
+                exit()
+
+            if app.config['AUTOMATE_IMEI_CHECK']:
+                if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
+                    print("Auto Approved/Rejected Application Id:" + str(reg_details.id))
+
+        except Exception:  # pragma: no cover
+            reg_details.update_processing_status('Failed')
+            reg_details.update_report_status('Failed')
+            db.session.commit()
+
+    @staticmethod
+    def auto_approve(task_id, reg_details, flatten_imeis, app):
+        # TODO: Need to remove duplicated session which throw warning
+        try:
+                from app.api.v1.resources.reviewer import SubmitReview
+                from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+                import json
+
+                result = Utilities.check_request_status(task_id)
+                duplicate_imeis = RegDetails.get_duplicate_imeis(reg_details)
+                res = RegDetails.get_imeis_count(reg_details.user_id)
+                section_status = 6
+                auto_status = 'Auto Approved'
+                auto_approved_sections = ['device_quota', 'device_description', 'imei_classification',
+                                          'imei_registration']
+
+                if result:
+                    sr = SubmitReview()
+                    status = "Approved" if result['non_complaint'] == 0 or result['stolen'] == 0 else "Rejected"
+
+                    if duplicate_imeis:
+                        res.update({'duplicated': len(RegDetails.get_duplicate_imeis(reg_details))})
+                        Utilities.generate_imeis_file(duplicate_imeis, reg_details.tracking_id, 'duplicated_imeis')
+                        reg_details.duplicate_imeis_file = '{upload_dir}/{tracking_id}/{file}'.format(
+                            upload_dir=app.config['DRS_UPLOADS'],
+                            tracking_id=reg_details.tracking_id,
+                            file='duplicated_imeis.txt'
+                        )
+
+                        # sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
+                        status = 'Rejected'
+                        section_status = 7
+                        auto_status = 'Auto Rejected'
+
+                    if status == 'Approved':
+                        # checkout device quota
+                        imeis = RegDetails.get_normalized_imeis(reg_details)
+                        user_quota = DeviceQuotaModel.get(reg_details.user_id)
+                        current_quota = user_quota.reg_quota
+                        user_quota.reg_quota = current_quota - len(imeis)
+                        DeviceQuotaModel.commit_quota_changes(user_quota)
+
+                        flatten_imeis = Utilities.bulk_normalize(flatten_imeis)
+                        sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
+
+                    for section in auto_approved_sections:
+                        RegDetails.add_comment(section, auto_status, 'import-1', 'Auto Reviewed', section_status
+                                                , reg_details.id)
+
+                    reg_details.summary = json.dumps({'summary': result})
+                    reg_details.report = result.get('compliant_report_name')
+                    reg_details.update_report_status('Processed')
+                    reg_details.update_status(status)
+                    reg_details.save()
+                    db.session.commit()
+
         except Exception:  # pragma: no cover
             reg_details.update_processing_status('Failed')
             db.session.commit()
+
+        return True
 
     @classmethod
     def create(cls, reg_details, reg_device_id):
@@ -145,7 +220,7 @@ class Device(db.Model):
                 thread.start()
             else:
                 cls.sync_bulk_create(reg_details, reg_device_id, app)
-        except Exception as e:   # pragma: no cover
+        except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             reg_details.update_processing_status('Failed')
             db.session.commit()
