@@ -171,8 +171,9 @@ class BulkCommonResources:  # pragma: no cover
                 response['provisional_stolen'] = pending_stolen_count
                 response['verified_imei'] = len(records)
                 response['count_per_condition'] = count_per_condition
-                response['non_complaint'] = data['non_compliant']
-                response['complaint'] = data['compliant']
+                response['non_compliant'] = data['non_compliant']
+                response['compliant'] = data['compliant']
+                response['compliant_active'] = data['compliant_active']
                 response['provisional_non_compliant'] = data['provisionally_non_compliant']
                 response['provisional_compliant'] = data['provisionally_compliant']
                 response['seen_on_network'] = seen_on_network
@@ -189,6 +190,7 @@ class BulkCommonResources:  # pragma: no cover
         """Return non compliant report for DRS bulk request."""
         non_compliant = 0
         compliant = 0
+        active_compliant = 0
         provisionally_compliant = 0
         provisionally_non_compliant = 0
         complaint_report = []
@@ -202,8 +204,10 @@ class BulkCommonResources:  # pragma: no cover
                 provisionally_compliant += 1
             elif "Provisionally non compliant" in status['status']:
                 provisionally_non_compliant += 1
-            elif status['status'] == "Compliant (Active)" or status['status'] == "Compliant (Inactive)":
+            elif status['status'] == "Compliant (Inactive)":
                 compliant += 1
+            elif status['status'] == "Compliant (Active)":
+                active_compliant += 1
             elif status['status'] == "Non compliant":
                 non_compliant += 1
 
@@ -220,6 +224,7 @@ class BulkCommonResources:  # pragma: no cover
         data = {
             "non_compliant": non_compliant,
             "compliant": compliant,
+            "compliant_active": active_compliant,
             "provisionally_non_compliant": provisionally_non_compliant,
             "provisionally_compliant": provisionally_compliant,
             "filename": report_name,
@@ -254,23 +259,57 @@ class BulkCommonResources:  # pragma: no cover
             stolen_status = resp['stolen_status']['provisional_only']
             reg_status = resp['registration_status']['provisional_only']
             block_date = resp.get('block_date', 'N/A')
+            gsma_not_valid = resp['realtime_checks']['gsma_not_found']
+            in_registration_list = resp['realtime_checks']['in_registration_list']
+            invalid_imei = resp['realtime_checks']['invalid_imei']
 
-            if reg_status:  # device's registration request is pending
-                if stolen_status:  # device's stolen request pending
-                    status = BulkCommonResources.populate_status(status, 'Provisionally non compliant', status_type, blocking_conditions, ['Your device is stolen report is pending'], imei=imei, block_date=block_date)
-                elif stolen_status is False:  # device is stolen
-                    status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is stolen'], imei=imei, block_date=block_date)
-                else:  # device is not stolen
-                    status = BulkCommonResources.populate_status(status, 'Provisionally Compliant', status_type)
-            elif reg_status is None:  # device is not registered
-                status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is not registered'], imei=imei, block_date=block_date)
-            else:  # device is registered
-                if stolen_status:  # stolen request is pending
-                    status = BulkCommonResources.populate_status(status, 'Provisionally non compliant', status_type, blocking_conditions, ['Your device stolen report is pending'], imei=imei, block_date=block_date)
-                elif stolen_status is None:  # device is not stolen
-                    status = BulkCommonResources.populate_status(status, 'Compliant', status_type, seen_with=seen_with)
-                else:  # stolen device
-                    status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is stolen'], imei=imei, block_date=block_date)
+            if reg_status:  # provisionally non - compliant as registration pending
+                status = BulkCommonResources.populate_status(status, 'Provisionally Compliant', status_type,
+                                                             blocking_conditions,
+                                                             ['Device already applied for registration'], imei=imei)
+            elif not reg_status and in_registration_list:
+                status = BulkCommonResources.populate_status(status, 'Compliant', status_type,
+                                                             blocking_conditions,
+                                                             ['Device already registered in DIRBS/DRS'], imei=imei,
+                                                             seen_with=seen_with)
+            elif stolen_status:  # non - compliant as stolen
+                status = BulkCommonResources.populate_status(status, 'Provisionally Non compliant', status_type,
+                                                             blocking_conditions,
+                                                             ['Device is reported stolen and is pending'], imei=imei,
+                                                             block_date=block_date)
+            elif stolen_status is not None:
+                status = BulkCommonResources.populate_status(status, 'Non compliant', status_type,
+                                                             blocking_conditions,
+                                                             ['Device is reported stolen'],
+                                                             imei=imei,
+                                                             block_date=block_date)
+            elif not gsma_not_valid and not in_registration_list and block_date is None and not seen_with and \
+                    not invalid_imei:
+                # Compliant Device
+                status = BulkCommonResources.populate_status(status, 'Compliant', status_type, seen_with=seen_with)
+            else:
+                status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions,
+                                                             ['Device is non compliant check blocking conditions if '
+                                                              'not found it may be invalid IMEI'],
+                                                             imei=imei,
+                                                             block_date=block_date)
+
+            # if reg_status:  # device's registration request is pending
+            #     if stolen_status:  # device's stolen request pending
+            #         status = BulkCommonResources.populate_status(status, 'Provisionally non compliant', status_type, blocking_conditions, ['Your device is stolen report is pending'], imei=imei, block_date=block_date)
+            #     elif stolen_status is False:  # device is stolen
+            #         status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is stolen'], imei=imei, block_date=block_date)
+            #     else:  # device is not stolen
+            #         status = BulkCommonResources.populate_status(status, 'Provisionally Compliant', status_type)
+            # elif reg_status is None:  # device is not registered
+            #     status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is not registered'], imei=imei, block_date=block_date)
+            # else:  # device is registered
+            #     if stolen_status:  # stolen request is pending
+            #         status = BulkCommonResources.populate_status(status, 'Provisionally non compliant', status_type, blocking_conditions, ['Your device stolen report is pending'], imei=imei, block_date=block_date)
+            #     elif stolen_status is None:  # device is not stolen
+            #         status = BulkCommonResources.populate_status(status, 'Compliant', status_type, seen_with=seen_with)
+            #     else:  # stolen device
+            #         status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions, ['Your device is stolen'], imei=imei, block_date=block_date)
             return status
         except Exception as error:
             raise error

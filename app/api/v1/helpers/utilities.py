@@ -193,17 +193,16 @@ class Utilities:
 
                 if not app.config['AUTOMATE_IMEI_CHECK']:
                     req.update_report_status('Processed')
+                    req.save()
+                    db.session.commit()
 
-                req.save()
-                db.session.commit()
                 app.logger.info('task_id:{0}-request_id:{1}-status:COMPLETED'.
                                 format(task_id, req.id, task.state))
             except Exception as e:
                 db.session.rollback()
-
                 if not app.config['AUTOMATE_IMEI_CHECK']:
                     req.update_report_status('Failed')
-
+                    req.update_status('Failed')
                 db.session.commit()
 
     @staticmethod

@@ -681,6 +681,12 @@ class SubmitReview(MethodResource):
                         provisional_imei.delta_status = 'remove'
                         provisional_imei.status = 'removed'
                         changed_imeis.append(provisional_imei)
+                    else:
+                        provisional_imei.delta_status = 'remove'
+                        provisional_imei.status = 'removed'
+                        provisional_imei.removed = True
+                        changed_imeis.append(provisional_imei)
+
         ApprovedImeis.bulk_insert_imeis(changed_imeis)
 
     @doc(description='Submit a request after final review', tags=['Reviewers'])

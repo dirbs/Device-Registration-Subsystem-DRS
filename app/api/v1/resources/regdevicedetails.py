@@ -31,6 +31,8 @@ from app.api.v1.models.status import Status
 from app.api.v1.schema.devicedetails import DeviceDetailsSchema
 from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
 
+from app.api.v1.helpers.utilities import Utilities
+
 
 class DeviceDetailsRoutes(Resource):
     """Class for handling Device Details routes."""
@@ -72,8 +74,16 @@ class DeviceDetailsRoutes(Resource):
             reg_details = RegDetails.get_by_id(reg_id)
 
             if app.config['USE_GSMA_DEVICE_INFO']:
-                get_gsma_info = ast.literal_eval(reg_details.imeis)
+                if reg_details.file:
+                    filename = reg_details.file
+                    tracking_id = reg_details.tracking_id
+                    arguments = {'imei_per_device': reg_details.imei_per_device, 'device_count': reg_details.device_count}
+                    get_gsma_info = Utilities.process_reg_file(filename, tracking_id, arguments)
+                else:
+                    get_gsma_info = ast.literal_eval(reg_details.imeis)
+
                 device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
+
                 args.update({'brand' : device['brand']})
                 args.update({'operating_system' : device['operating_system']})
                 args.update({'model_name' : device['marketing_name']})
@@ -96,6 +106,10 @@ class DeviceDetailsRoutes(Resource):
             reg_details.update_status(device_status)
             db.session.commit()
             Device.create(reg_details, reg_device.id)
+
+            # reg_device = RegDevice.update(reg_device, args)
+
+
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
@@ -114,7 +128,6 @@ class DeviceDetailsRoutes(Resource):
 
     @staticmethod
     def put_gsma_device_info(get_gsma_info):
-        from app.api.v1.helpers.utilities import Utilities
         device = {}
         for tac in get_gsma_info:
             get_gsma_info = tac[0][:8]
@@ -148,12 +161,21 @@ class DeviceDetailsRoutes(Resource):
             reg_device = RegDevice.get_device_by_registration_id(reg_id)
 
             if app.config['USE_GSMA_DEVICE_INFO']:
-                get_gsma_info = ast.literal_eval(reg_details.imeis)
+                if reg_details.file:
+                    filename = reg_details.file
+                    tracking_id = reg_details.tracking_id
+                    arguments = {'imei_per_device': reg_details.imei_per_device,
+                                 'device_count': reg_details.device_count}
+                    get_gsma_info = Utilities.process_reg_file(filename, tracking_id, arguments)
+                else:
+                    get_gsma_info = ast.literal_eval(reg_details.imeis)
+
                 device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
-                args.update({'brand' : device['brand']})
-                args.update({'operating_system' : device['operating_system']})
-                args.update({'model_name' : device['marketing_name']})
-                args.update({'model_num' : device['model_name']})
+
+                args.update({'brand': device['brand']})
+                args.update({'operating_system': device['operating_system']})
+                args.update({'model_name': device['marketing_name']})
+                args.update({'model_num': device['model_name']})
 
             if reg_details:
                 args.update({'reg_details_id': reg_details.id, 'status': reg_details.status})
@@ -166,7 +188,8 @@ class DeviceDetailsRoutes(Resource):
 
             # day_passed = (datetime.now() - reg_details.updated_at) > timedelta(1)
             processing_failed = reg_details.processing_status in [Status.get_status_id('Failed'),
-                                                             Status.get_status_id('New Request')]
+                                                             Status.get_status_id('New Request'),
+                                                             Status.get_status_id('Pending Review')]
             report_failed = reg_details.report_status == Status.get_status_id('Failed')
             # report_timeout = reg_details.report_status == Status.get_status_id('Processing') and day_passed
             processing_required = processing_failed or report_failed

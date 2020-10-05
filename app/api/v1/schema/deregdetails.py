@@ -91,14 +91,18 @@ class DeRegDetailsSchema(Schema):
             if len(data['reason']) == 0:
                 raise ValidationError('Invalid reason', field_names=['reason'])
 
+    @pre_load()
+    def create_device_quota(self, data):
+        """Create a new device quotes for the user."""
+        if 'user_id' in data:
+            DeviceQuota.get_or_create(data['user_id'], 'exporter')
+
     @validates('user_id')
     def validate_user_id(self, value):
         """ Validate user_id. """
-
         validate_input('user id', value)
 
     @validates('user_name')
     def validate_user_name(self, value):
         """ Validate user name. """
-
         validate_input('user name', value)

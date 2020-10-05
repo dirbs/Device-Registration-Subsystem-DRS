@@ -90,7 +90,7 @@ class Device(db.Model):
 
                 if app.config['AUTOMATE_IMEI_CHECK']:
                     if Device.auto_approve(task_id, reg_details, imeis, app):
-                        print("Auto Approved/Rejected Application Id:" + str(reg_details.id))
+                        print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
             except Exception as e:
                 # app.logger.exception(e)
@@ -136,7 +136,7 @@ class Device(db.Model):
 
             if app.config['AUTOMATE_IMEI_CHECK']:
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
-                    print("Auto Approved/Rejected Application Id:" + str(reg_details.id))
+                    print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
         except Exception:  # pragma: no cover
             reg_details.update_processing_status('Failed')
@@ -147,6 +147,10 @@ class Device(db.Model):
     def auto_approve(task_id, reg_details, flatten_imeis, app):
         # TODO: Need to remove duplicated session which throw warning
         try:
+                # reg_details.update_processing_status('Failed')
+                # reg_details.update_status('Failed')
+                # db.session.commit()
+                # return True
                 from app.api.v1.resources.reviewer import SubmitReview
                 from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
                 import json
@@ -154,14 +158,23 @@ class Device(db.Model):
                 result = Utilities.check_request_status(task_id)
                 duplicate_imeis = RegDetails.get_duplicate_imeis(reg_details)
                 res = RegDetails.get_imeis_count(reg_details.user_id)
+                sections_comment = "Auto"
                 section_status = 6
-                auto_status = 'Auto Approved'
                 auto_approved_sections = ['device_quota', 'device_description', 'imei_classification',
                                           'imei_registration']
 
                 if result:
                     sr = SubmitReview()
-                    status = "Approved" if result['non_complaint'] == 0 or result['stolen'] == 0 else "Rejected"
+                    flatten_imeis = Utilities.bulk_normalize(flatten_imeis)
+
+                    if result['non_compliant'] != 0 or result['stolen'] != 0 or result['compliant_active'] != 0 \
+                            or result['provisional_non_compliant'] != 0 or result['provisional_compliant'] != 0:
+                        sections_comment = sections_comment + ' Rejected, Device/Devices found in Non-Compliant States'
+                        status = 'Rejected'
+                        section_status = 7
+                    else:
+                        sections_comment = sections_comment + ' Approved'
+                        status = 'Approved'
 
                     if duplicate_imeis:
                         res.update({'duplicated': len(RegDetails.get_duplicate_imeis(reg_details))})
@@ -174,8 +187,8 @@ class Device(db.Model):
 
                         # sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
                         status = 'Rejected'
+                        sections_comment = sections_comment + ' Rejected, Duplicate IMEIS Found, Please check duplicate file'
                         section_status = 7
-                        auto_status = 'Auto Rejected'
 
                     if status == 'Approved':
                         # checkout device quota
@@ -185,12 +198,14 @@ class Device(db.Model):
                         user_quota.reg_quota = current_quota - len(imeis)
                         DeviceQuotaModel.commit_quota_changes(user_quota)
 
-                        flatten_imeis = Utilities.bulk_normalize(flatten_imeis)
                         sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
 
+                    else:
+                        sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
+
                     for section in auto_approved_sections:
-                        RegDetails.add_comment(section, auto_status, 'import-1', 'Auto Reviewed', section_status
-                                                , reg_details.id)
+                        RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed', section_status
+                                               , reg_details.id)
 
                     reg_details.summary = json.dumps({'summary': result})
                     reg_details.report = result.get('compliant_report_name')
@@ -201,6 +216,7 @@ class Device(db.Model):
 
         except Exception:  # pragma: no cover
             reg_details.update_processing_status('Failed')
+            reg_details.update_status('Failed')
             db.session.commit()
 
         return True

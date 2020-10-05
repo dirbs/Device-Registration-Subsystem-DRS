@@ -59,9 +59,9 @@ global:
 
   #Directories
 
-  dereg_sample_file: './deregistration/dereg_sample_file'
-  reg_sample_file: './registration/reg_sample_file.tsv'
-  upload_directory: '/home/yasirxeshan/cacf/drs_intl_uploads/summary/'
+  dereg_sample_file: 'absolute_path_to_directory/Device-Registration-Subsystem/etc/deregistration/dereg_sample_file'
+  reg_sample_file: 'absolute_path_to_directory/Device-Registration-Subsystem/etc/registration/reg_sample_file.tsv'
+  upload_directory: 'absolute_path_to_directory'
 
   #languages support
   supported_languages:
@@ -78,8 +78,8 @@ global:
 lists:
   # directory path to generate the list,
   # only absolute paths to the directories are acceptable
-  path: '/home/yasirxeshan/cacf/drs_intl_uploads/lists/'
-  ddcds_path: '/home/yasirxeshan/cacf/drs_intl_uploads/ddcds_lists/'
+  path: 'path_to_upload_dir'
+  ddcds_path: 'path_ddcds_list_direcoryt'
 
   # maximum number of workers used for the list generation
   # typically it should be 2 x num_of_cpus in the system
@@ -130,6 +130,11 @@ celery:
   CeleryTasks: ['app.api.v1.reports_generator']
 
 
+# Bypass reviewer check for approving or rejecting application
+
+automate_imei_check: True
+
+
 # Overwrite devices information with GSMA Device Details which is provided by user
 
 use_gsma_device_info: True
@@ -138,43 +143,35 @@ use_gsma_device_info: True
  # DIRBS CORE Conditions & Reasons to be Non - Compliant
 
 conditions:
-  classification_state:
-    - type: 'blocking_conditions'
-      name: 'malformed'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
 
-    - type: 'blocking_conditions'
-      name: 'local_stolen'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'malformed'
+    reason: 'Malformed IMEI'
 
-    - type: 'blocking_conditions'
-      name: 'duplicate_large'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'duplicate_large'
+    reason: 'Multiple Duplicate Found'
 
-    - type: 'blocking_conditions'
-      name: 'duplicate'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'duplicate'
+    reason: 'Duplicate IMEI'
 
-    - type: 'blocking_conditions'
-      name: 'not_on_registration_list'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+#  - name: 'not_on_registration_list'
+#    reason: 'IMEI not found in registration list'
 
-    - type: 'blocking_conditions'
-      name: 'gsma_not_found'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'gsma_not_found'
+    reason: 'TAC not in GSMA'
 
-    - type: 'blocking_conditions'
-      name: 'local_stolen'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'local_stolen'
+    reason: 'IMEI found on local stolen list'
 
-    - type: 'informative_conditions' 
-      name: 'xyz'
-      reason: 'reason_to_be_non_compliant_w.r.t_condition'
 
-  realtime_checks:
-    ever_observed_on_network: False
-    gsma_not_found: False
-    in_registration_list: False
-    invalid_imei: False
-    is_exempted_device: False
-    is_paired: False
+
+
+realtime_checks:
+  ever_observed_on_network: 'ever_observed_on_network'
+  gsma_not_found: 'gsma_not_found'
+  in_registration_list: 'in_registration_list'
+  invalid_imei: 'invalid_imei'
+  is_exempted_device: 'is_exempted_device'
+  is_paired: 'is_paired'
+
+stolen_info: 'stolen_status'
+registration_info: 'registration_status'
