@@ -87,10 +87,14 @@ class Utilities:
         return imeis
 
     @classmethod
-    def generate_summary(cls, imeis, tracking_id):
+    def generate_summary(cls, imeis, tracking_id, imei_per_device=None):
         """Method to get compliance summary and report."""
         try:
-            response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id))
+            if imei_per_device is not None:
+                response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id, imei_per_device))
+                # response = BulkCommonResources.get_summary(imeis, tracking_id, imei_per_device=imei_per_device)
+            else:
+                response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id))
             # response = BulkCommonResources.get_summary(imeis, tracking_id)
             return response.id
         except Exception as e:

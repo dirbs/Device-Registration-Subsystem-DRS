@@ -31,11 +31,15 @@ class BulkCommonResources:  # pragma: no cover
 
     @staticmethod
     @celery.task
-    def get_summary(imeis_list, tracking_id):
+    def get_summary(imeis_list, tracking_id, imei_per_device=None):
         """Celery task for bulk request processing."""
         try:
             imeis_chunks = BulkCommonResources.chunked_data(imeis_list)
-            records = BulkCommonResources.start_threads(imeis_list=imeis_chunks)
+            if imei_per_device is None:
+                records = BulkCommonResources.start_threads(imeis_list=imeis_chunks,
+                                                            imei_per_device=imei_per_device)
+            else:
+                records = BulkCommonResources.start_threads(imeis_list=imeis_chunks)
             # send records for summary generation
             response = BulkCommonResources.build_drs_summary(records, tracking_id)
             return response
@@ -57,13 +61,13 @@ class BulkCommonResources:  # pragma: no cover
             raise e
 
     @staticmethod
-    def start_threads(imeis_list):
+    def start_threads(imeis_list, imei_per_device = None):
         """Process IMEIs simultaneously by starting multiple threads at a time."""
         thread_list = []
         records = []
         unprocessed_imeis = []
         for imei in imeis_list:
-            thread_list.append(Thread(target=BulkCommonResources.get_records, args=(imei, records, unprocessed_imeis)))
+            thread_list.append(Thread(target=BulkCommonResources.get_records, args=(imei, records, unprocessed_imeis, imei_per_device)))
 
         # start threads for all imei chunks
         for x in thread_list:
@@ -80,12 +84,12 @@ class BulkCommonResources:  # pragma: no cover
 
     # get records from core system
     @staticmethod
-    def get_records(imeis, records, unprocessed_imeis):
+    def get_records(imeis, records, unprocessed_imeis, imei_per_device = None):
         """Compile IMEIs batch responses from DIRBS core system."""
         try:
             while imeis:
                 imei = imeis.pop(-1)  # pop the last item from queue
-               
+
                 try:
                     if imei:
                         batch_req = {

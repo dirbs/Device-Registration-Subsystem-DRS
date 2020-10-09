@@ -79,7 +79,7 @@ class Device(db.Model):
                 db.session.commit()
                 reg_details.update_processing_status('Processed')
                 db.session.commit()
-                task_id = Utilities.generate_summary(imeis, reg_details.tracking_id)
+                task_id = Utilities.generate_summary(imeis, reg_details.tracking_id, imei_per_device = reg_details.imei_per_device)
                 app.logger.info('task with task_id: {0} initiated'.format(task_id))
                 if task_id:
                     Utilities.pool_summary_request(task_id, reg_details, app)

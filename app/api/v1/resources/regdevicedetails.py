@@ -84,10 +84,11 @@ class DeviceDetailsRoutes(Resource):
 
                 device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
 
-                args.update({'brand' : device['brand']})
-                args.update({'operating_system' : device['operating_system']})
-                args.update({'model_name' : device['marketing_name']})
-                args.update({'model_num' : device['model_name']})
+                if device:
+                    args.update({'brand': device['brand']})
+                    args.update({'operating_system': device['operating_system']})
+                    args.update({'model_name': device['marketing_name']})
+                    args.update({'model_num': device['model_name']})
 
             if reg_details:
                 args.update({'reg_details_id': reg_details.id})
@@ -135,7 +136,7 @@ class DeviceDetailsRoutes(Resource):
 
         device_info = Utilities.get_gsma_device(get_gsma_info)
 
-        if device_info['results'][0]['gsma']:
+        if device_info['results'][0]['gsma'] and device_info['results'][0]['gsma'] is not None:
             device_info = device_info['results'][0]['gsma']
             device["brand"] = device_info['brand_name']
             device["operating_system"] = device_info['operating_system']
@@ -144,7 +145,6 @@ class DeviceDetailsRoutes(Resource):
             return device
         else:
             return False
-
 
     @staticmethod
     def put():
@@ -172,10 +172,11 @@ class DeviceDetailsRoutes(Resource):
 
                 device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
 
-                args.update({'brand': device['brand']})
-                args.update({'operating_system': device['operating_system']})
-                args.update({'model_name': device['marketing_name']})
-                args.update({'model_num': device['model_name']})
+                if device:
+                    args.update({'brand': device['brand']})
+                    args.update({'operating_system': device['operating_system']})
+                    args.update({'model_name': device['marketing_name']})
+                    args.update({'model_num': device['model_name']})
 
             if reg_details:
                 args.update({'reg_details_id': reg_details.id, 'status': reg_details.status})

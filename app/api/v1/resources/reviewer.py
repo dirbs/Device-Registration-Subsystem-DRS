@@ -1029,7 +1029,7 @@ class IMEIClassification(MethodResource):
                     return Response(json.dumps(IMEIClassificationSchema().dump(res).data),
                                     status=200, mimetype='application/json')
                 else:
-                    res = {}
+                    res = {'error': ['request {id} summary not generated yet'.format(id=request_id)]}
                     return Response(json.dumps(res), status=200, mimetype='application/json')
             else:
                 res = {'error': ['request {id} does not exists'.format(id=request_id)]}
