@@ -146,15 +146,11 @@ class Device(db.Model):
     @staticmethod
     def auto_approve(task_id, reg_details, flatten_imeis, app):
         # TODO: Need to remove duplicated session which throw warning
+        from app.api.v1.resources.reviewer import SubmitReview
+        from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        import json
+        sr = SubmitReview()
         try:
-                # reg_details.update_processing_status('Failed')
-                # reg_details.update_status('Failed')
-                # db.session.commit()
-                # return True
-                from app.api.v1.resources.reviewer import SubmitReview
-                from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
-                import json
-
                 result = Utilities.check_request_status(task_id)
                 duplicate_imeis = RegDetails.get_duplicate_imeis(reg_details)
                 res = RegDetails.get_imeis_count(reg_details.user_id)
@@ -164,7 +160,6 @@ class Device(db.Model):
                                           'imei_registration']
 
                 if result:
-                    sr = SubmitReview()
                     flatten_imeis = Utilities.bulk_normalize(flatten_imeis)
 
                     if result['non_compliant'] != 0 or result['stolen'] != 0 or result['compliant_active'] != 0 \
@@ -172,9 +167,11 @@ class Device(db.Model):
                         sections_comment = sections_comment + ' Rejected, Device/Devices found in Non-Compliant States'
                         status = 'Rejected'
                         section_status = 7
+                        message = 'Your request {id} has been rejected'.format(id=reg_details.id)
                     else:
                         sections_comment = sections_comment + ' Approved'
                         status = 'Approved'
+                        message = 'Your request {id} has been Approved'.format(id=reg_details.id)
 
                     if duplicate_imeis:
                         res.update({'duplicated': len(RegDetails.get_duplicate_imeis(reg_details))})
@@ -189,6 +186,7 @@ class Device(db.Model):
                         status = 'Rejected'
                         sections_comment = sections_comment + ' Rejected, Duplicate IMEIS Found, Please check duplicate file'
                         section_status = 7
+                        message = 'Your request {id} has been rejected because duplicate imeis found!'.format(id=reg_details.id)
 
                     if status == 'Approved':
                         # checkout device quota
@@ -197,11 +195,11 @@ class Device(db.Model):
                         current_quota = user_quota.reg_quota
                         user_quota.reg_quota = current_quota - len(imeis)
                         DeviceQuotaModel.commit_quota_changes(user_quota)
-
+                        # message = 'Your request {id} has been approved'.format(id=reg_details.id)
                         sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
-
                     else:
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
+                        # message = 'Your request {id} has been rejected'.format(id=reg_details.id)
 
                     for section in auto_approved_sections:
                         RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed', section_status
@@ -211,12 +209,22 @@ class Device(db.Model):
                     reg_details.report = result.get('compliant_report_name')
                     reg_details.update_report_status('Processed')
                     reg_details.update_status(status)
+
+                    sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                 request_type='registration', request_status=section_status,
+                                                 message=message)
+
                     reg_details.save()
                     db.session.commit()
 
         except Exception:  # pragma: no cover
+            db.session.rollback()
             reg_details.update_processing_status('Failed')
             reg_details.update_status('Failed')
+            message = 'Your request {id} has failed please re-initiate device request'.format(id=reg_details.id)
+            sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                    request_type='registration', request_status=7,
+                                                    message=message)
             db.session.commit()
 
         return True

@@ -152,11 +152,12 @@ class DeRegDevice(db.Model):
     @staticmethod
     def auto_approve(task_id, reg_details):
         # TODO: Need to remove duplicated session which throws warning
-        try:
-            from app.api.v1.resources.reviewer import SubmitReview
-            from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
-            import json
+        from app.api.v1.resources.reviewer import SubmitReview
+        from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        import json
+        sr = SubmitReview()
 
+        try:
             result = Utilities.check_request_status(task_id)
             section_status = 6
             sections_comment = "Auto"
@@ -166,12 +167,14 @@ class DeRegDevice(db.Model):
             if result:
                 if result['non_compliant'] != 0 or result['stolen'] != 0 or result['compliant_active'] != 0 \
                         or result['provisional_non_compliant'] != 0:
-                    sections_comment = sections_comment + ' Rejected, Device/Devices found in Non-Compliant State'
+                    sections_comment = sections_comment + ' Rejected, Device/s found in Non-Compliant State'
                     status = 'Rejected'
                     section_status = 7
+                    message = 'Your request {id} has been rejected because Non-Compliant Device Found in it.'.format(id=reg_details.id)
                 else:
                     sections_comment = sections_comment + ' Approved'
                     status = 'Approved'
+                    message = 'Your request {id} has been Approved'.format(id=reg_details.id)
 
                 if status == 'Approved':
                     # checkout device quota
@@ -189,6 +192,10 @@ class DeRegDevice(db.Model):
                         DeRegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed'
                                                  , section_status, reg_details.id)
 
+                sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                        request_type='de-registration', request_status=section_status,
+                                                        message=message)
+
                 reg_details.summary = json.dumps({'summary': result})
                 reg_details.report = result.get('compliant_report_name')
                 reg_details.update_report_status('Processed')
@@ -204,8 +211,13 @@ class DeRegDevice(db.Model):
 
         except Exception as e: # pragma: no cover
             app.logger.exception(e)
+            db.session.rollback()
             reg_details.update_processing_status('Failed')
             reg_details.update_status('Failed')
+            message = 'Your request {id} has failed please re-initiate device request'.format(id=reg_details.id)
+            sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                    request_type='registration', request_status=7,
+                                                    message=message)
             db.session.commit()
 
     def save(self):

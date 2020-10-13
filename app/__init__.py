@@ -35,11 +35,9 @@ datetime.strptime('', '')
 
 app = Flask(__name__)
 app.json_encoder = JSONEncoder()
-
 CORS(app)
 Api(app)
 babel = Babel(app)
-
 
 # read and load DRS base configuration to the app
 try:
@@ -73,7 +71,7 @@ celery.conf.update(app.config)
 app.config['imports'] = app.config['CeleryTasks']
 
 # we really need wild-card import here for now
-from app.api.v1.routes import *  # pylint: disable=wildcard-import
+from app.api.v1.routes import register_docs  # pylint: disable=wildcard-import
 
 
 @app.after_request
