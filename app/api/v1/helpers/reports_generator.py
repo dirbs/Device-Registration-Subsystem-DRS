@@ -35,7 +35,7 @@ class BulkCommonResources:  # pragma: no cover
         """Celery task for bulk request processing."""
         try:
             imeis_chunks = BulkCommonResources.chunked_data(imeis_list)
-            if imei_per_device is None:
+            if imei_per_device is not None:
                 records = BulkCommonResources.start_threads(imeis_list=imeis_chunks,
                                                             imei_per_device=imei_per_device)
             else:
