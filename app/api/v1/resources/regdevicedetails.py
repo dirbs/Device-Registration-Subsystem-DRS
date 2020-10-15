@@ -33,6 +33,8 @@ from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
 
 from app.api.v1.helpers.utilities import Utilities
 
+from app.api.v1.helpers.multisimcheck import MultiSimCheck
+
 
 class DeviceDetailsRoutes(Resource):
     """Class for handling Device Details routes."""
@@ -77,7 +79,8 @@ class DeviceDetailsRoutes(Resource):
                 if reg_details.file:
                     filename = reg_details.file
                     tracking_id = reg_details.tracking_id
-                    arguments = {'imei_per_device': reg_details.imei_per_device, 'device_count': reg_details.device_count}
+                    arguments = {'imei_per_device': reg_details.imei_per_device,
+                                 'device_count': reg_details.device_count}
                     get_gsma_info = Utilities.process_reg_file(filename, tracking_id, arguments)
                 else:
                     get_gsma_info = ast.literal_eval(reg_details.imeis)
@@ -96,9 +99,31 @@ class DeviceDetailsRoutes(Resource):
                 args.update({'reg_details_id': ''})
 
             validation_errors = schema.validate(args)
+
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
-                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            if reg_details.file:
+                filename = reg_details.file
+                arg = {'imei_per_device': reg_details.imei_per_device, 'device_count': reg_details.device_count}
+                response = Utilities.process_reg_file(filename, reg_details.tracking_id, arg)
+            else:
+                response = ast.literal_eval(reg_details.imeis)
+
+            message = DeviceDetailsRoutes.multi_sim_validate(response)
+
+            if message is True:
+                pass
+            elif message is False:
+                data = {'message': "Something went wrong while checking multi sim check please try again later!"}
+                return Response(app.json_encoder.encode(data), status=CODES.get('ok'),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+            else:
+                data = {'message': message}
+                return Response(app.json_encoder.encode(data), status=CODES.get('SEE_OTHER'),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
             reg_device = RegDevice.create(args)
             reg_device.technologies = DeviceTechnology.create(reg_device.id, args.get('technologies'))
             response = schema.dump(reg_device, many=False).data
@@ -109,7 +134,6 @@ class DeviceDetailsRoutes(Resource):
             Device.create(reg_details, reg_device.id)
 
             # reg_device = RegDevice.update(reg_device, args)
-
 
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -126,6 +150,37 @@ class DeviceDetailsRoutes(Resource):
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
         finally:
             db.session.close()
+
+    @staticmethod
+    def multi_sim_validate(response):
+        try:
+            imeis = []
+            for device_imeis in response:
+                # Fix-Needed: Converting string to list in ast raise error of leading zero in python3.8
+                # quotes_removal = [ast.literal_eval(re.sub(r'\b0+\B', '', i)) for i in device_imeis]
+                # quotes_removal = [ast.literal_eval(i) for i in device_imeis]
+                quotes_removal = [i for i in device_imeis]
+                str_repr = str(quotes_removal).strip("[]")
+                str_repr = str_repr.replace("'", "")
+                str_repr = "['" + str_repr + "']"
+                imeis.append(ast.literal_eval(str_repr.replace(' ', '')))
+
+            multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
+                                                                     app.config['API_VERSION'],
+                                                                     imeis)
+
+            if multi_sim_result[0] == 'False':
+                message = ""
+                for msg in multi_sim_result:
+                    if msg == 'False':
+                        continue
+                    message += str(msg)
+                return message
+            elif multi_sim_result[0] is True:
+                return True
+        except Exception as e:
+            app.logger.exception(e)
+            return False
 
     @staticmethod
     def put_gsma_device_info(get_gsma_info):
@@ -187,10 +242,30 @@ class DeviceDetailsRoutes(Resource):
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
+            if reg_details.file:
+                filename = reg_details.file
+                args = {'imei_per_device': reg_details.imei_per_device, 'device_count': reg_details.device_count}
+                response = Utilities.process_reg_file(filename, reg_details.tracking_id, args)
+            else:
+                response = ast.literal_eval(reg_details.imeis)
+
+            message = DeviceDetailsRoutes.multi_sim_validate(response)
+
+            if message is True:
+                pass
+            elif message is False:
+                data = {'message': "Something went wrong while checking multi sim check please try again later!"}
+                return Response(app.json_encoder.encode(data), status=CODES.get('ok'),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+            else:
+                data = {'message': message}
+                return Response(app.json_encoder.encode(data), status=CODES.get('SEE_OTHER'),
+                                mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
             # day_passed = (datetime.now() - reg_details.updated_at) > timedelta(1)
             processing_failed = reg_details.processing_status in [Status.get_status_id('Failed'),
-                                                             Status.get_status_id('New Request'),
-                                                             Status.get_status_id('Pending Review')]
+                                                                  Status.get_status_id('New Request'),
+                                                                  Status.get_status_id('Pending Review')]
             report_failed = reg_details.report_status == Status.get_status_id('Failed')
             # report_timeout = reg_details.report_status == Status.get_status_id('Processing') and day_passed
             processing_required = processing_failed or report_failed

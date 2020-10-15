@@ -32,15 +32,11 @@ class BulkCommonResources:  # pragma: no cover
 
     @staticmethod
     @celery.task
-    def get_summary(imeis_list, tracking_id, imei_per_device=None):
+    def get_summary(imeis_list, tracking_id):
         """Celery task for bulk request processing."""
         try:
             imeis_chunks = BulkCommonResources.chunked_data(imeis_list)
-            if imei_per_device is not None:
-                records = BulkCommonResources.start_threads(imeis_list=imeis_chunks,
-                                                            imei_per_device=imei_per_device)
-            else:
-                records = BulkCommonResources.start_threads(imeis_list=imeis_chunks)
+            records = BulkCommonResources.start_threads(imeis_list=imeis_chunks)
             # send records for summary generation
             response = BulkCommonResources.build_drs_summary(records, tracking_id)
             return response
@@ -62,13 +58,13 @@ class BulkCommonResources:  # pragma: no cover
             raise e
 
     @staticmethod
-    def start_threads(imeis_list, imei_per_device = None):
+    def start_threads(imeis_list):
         """Process IMEIs simultaneously by starting multiple threads at a time."""
         thread_list = []
         records = []
         unprocessed_imeis = []
         for imei in imeis_list:
-            thread_list.append(Thread(target=BulkCommonResources.get_records, args=(imei, records, unprocessed_imeis, imei_per_device)))
+            thread_list.append(Thread(target=BulkCommonResources.get_records, args=(imei, records, unprocessed_imeis)))
 
         # start threads for all imei chunks
         for x in thread_list:
@@ -85,7 +81,7 @@ class BulkCommonResources:  # pragma: no cover
 
     # get records from core system
     @staticmethod
-    def get_records(imeis, records, unprocessed_imeis, imei_per_device = None):
+    def get_records(imeis, records, unprocessed_imeis):
         """Compile IMEIs batch responses from DIRBS core system."""
         try:
             while imeis:
@@ -106,18 +102,19 @@ class BulkCommonResources:  # pragma: no cover
 
                         if imei_response.status_code == 200:
                             imei_response = imei_response.json()
-                            if imei_per_device is not None:
-                                imeis_for_multi_sim_check = [imei[x:x + imei_per_device] for x in range(0, len(imei),
-                                                                                                        imei_per_device)]
-                                multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
-                                                                                         app.config['API_VERSION'],
-                                                                                         imeis_for_multi_sim_check)
 
-                                if len(multi_sim_result) > 0 and multi_sim_result[0] == False:
-                                    imei_response['results'][0]['multi_sim_matched'] = multi_sim_result[0]
-                                    imei_response['results'][0]['multi_sim_info'] = multi_sim_result[1]
-                                else:
-                                    imei_response['results'][0]['multi_sim_matched'] = multi_sim_result[0]
+                            # if imei_per_device is not None:
+                            #     imeis_for_multi_sim_check = [imei[x:x + imei_per_device] for x in range(0, len(imei),
+                            #                                                                             imei_per_device)]
+                            #     multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
+                            #                                                              app.config['API_VERSION'],
+                            #                                                              imeis_for_multi_sim_check)
+                            #
+                            #     if len(multi_sim_result) > 0 and multi_sim_result[0] == False:
+                            #         imei_response['results'][0]['multi_sim_matched'] = multi_sim_result[0]
+                            #         imei_response['results'][0]['multi_sim_info'] = multi_sim_result[1]
+                            #     elif len(multi_sim_result) > 0:
+                            #         imei_response['results'][0]['multi_sim_matched'] = multi_sim_result[0]
 
                             records.extend(imei_response['results'])
                         else:
@@ -197,7 +194,7 @@ class BulkCommonResources:  # pragma: no cover
                 response['seen_on_network'] = seen_on_network
                 response['stolen'] = stolen
                 response['compliant_report_name'] = data['filename']
-                response['multi_sim_not_matched'] = data['multi_sim_not_matched']
+                # response['multi_sim_not_matched'] = data['multi_sim_not_matched']
                 response['id'] = tracking_id
             return response
         except Exception as e:
@@ -213,7 +210,7 @@ class BulkCommonResources:  # pragma: no cover
         provisionally_compliant = 0
         provisionally_non_compliant = 0
         complaint_report = []
-        multi_sim_not_matched = 0
+        # multi_sim_not_matched = 0
 
         for key in records:
             status = BulkCommonResources.compliance_status(resp=key, status_type="bulk", imei=key['imei_norm'])
@@ -232,9 +229,9 @@ class BulkCommonResources:  # pragma: no cover
                 active_compliant += 1
             elif status['status'] == "Non compliant":
                 non_compliant += 1
-            if "multi_sim_matched" in key:
-                if key['multi_sim_matched'] is not True:
-                    multi_sim_not_matched += 1
+            # if "multi_sim_matched" in key:
+            #     if key['multi_sim_matched'] is not True:
+            #         multi_sim_not_matched += 1
 
             complaint_report.append(status)
 
@@ -256,7 +253,7 @@ class BulkCommonResources:  # pragma: no cover
             "provisionally_compliant": provisionally_compliant,
             "filename": report_name,
             "user_report_name": user_report_name,
-            "multi_sim_not_matched": multi_sim_not_matched
+            # "multi_sim_not_matched": multi_sim_not_matched
         }
         return data
 
@@ -311,10 +308,10 @@ class BulkCommonResources:  # pragma: no cover
                                                              ['Device is reported stolen'],
                                                              imei=imei,
                                                              block_date=block_date)
-            elif "multi_sim_matched" in resp and resp['multi_sim_matched'] is not True:
-                status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions,
-                                                                 [resp['multi_sim_info']['simslot_mismatch']],
-                                                             imei=imei, block_date=block_date)
+            # elif "multi_sim_matched" in resp and resp['multi_sim_matched'] is not True:
+            #     status = BulkCommonResources.populate_status(status, 'Non compliant', status_type, blocking_conditions,
+            #                                                      [resp['multi_sim_info']['simslot_mismatch']],
+            #                                                  imei=imei, block_date=block_date)
             elif not gsma_not_valid and not in_registration_list and block_date is None and not seen_with and \
                     not invalid_imei:
                 # Compliant Device

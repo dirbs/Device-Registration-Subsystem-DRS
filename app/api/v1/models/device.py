@@ -73,14 +73,14 @@ class Device(db.Model):
                             db.session.add(approved_imei)
                         elif imei_object and imei_object.status == 'removed':
                             imei_object.status = 'pending'
+                            imei_object.delta_status = 'add'
                             imei_object.removed = False
                             imei_object.request_id = reg_details.id
                             db.session.add(imei_object)
                 db.session.commit()
                 reg_details.update_processing_status('Processed')
                 db.session.commit()
-                task_id = Utilities.generate_summary(imeis, reg_details.tracking_id,
-                                                     imei_per_device=reg_details.imei_per_device)
+                task_id = Utilities.generate_summary(imeis, reg_details.tracking_id)
                 app.logger.info('task with task_id: {0} initiated'.format(task_id))
                 if task_id:
                     Utilities.pool_summary_request(task_id, reg_details, app)
@@ -127,9 +127,7 @@ class Device(db.Model):
             reg_details.update_report_status('Processing')
             db.session.commit()
 
-            # task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
-            task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id,
-                                                 imei_per_device=reg_details.imei_per_device)
+            task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
             if task_id:
                 Utilities.pool_summary_request(task_id, reg_details, app)
             else:
@@ -166,8 +164,7 @@ class Device(db.Model):
                     flatten_imeis = Utilities.bulk_normalize(flatten_imeis)
 
                     if result['non_compliant'] != 0 or result['stolen'] != 0 or result['compliant_active'] != 0 \
-                            or result['provisional_non_compliant'] != 0 or result['provisional_compliant'] != 0 \
-                            or result['multi_sim_not_matched'] != 0:
+                            or result['provisional_non_compliant'] != 0 or result['provisional_compliant'] != 0:
                         sections_comment = sections_comment + ' Rejected, Device/Devices found in Non-Compliant States'
                         status = 'Rejected'
                         section_status = 7
@@ -212,6 +209,7 @@ class Device(db.Model):
                     reg_details.summary = json.dumps({'summary': result})
                     reg_details.report = result.get('compliant_report_name')
                     reg_details.update_report_status('Processed')
+                    reg_details.report_allowed = True
                     reg_details.update_status(status)
 
                     sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,

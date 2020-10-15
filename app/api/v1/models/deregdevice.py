@@ -200,6 +200,7 @@ class DeRegDevice(db.Model):
                 reg_details.report = result.get('compliant_report_name')
                 reg_details.update_report_status('Processed')
                 reg_details.update_status(status)
+                reg_details.report_allowed = True
                 reg_details.save()
                 db.session.commit()
                 return True
