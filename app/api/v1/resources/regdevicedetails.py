@@ -117,11 +117,11 @@ class DeviceDetailsRoutes(Resource):
                 pass
             elif message is False:
                 data = {'message': "Something went wrong while checking multi sim check please try again later!"}
-                return Response(app.json_encoder.encode(data), status=CODES.get('ok'),
+                return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             else:
                 data = {'message': message}
-                return Response(app.json_encoder.encode(data), status=CODES.get('SEE_OTHER'),
+                return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
 
             reg_device = RegDevice.create(args)
@@ -255,11 +255,11 @@ class DeviceDetailsRoutes(Resource):
                 pass
             elif message is False:
                 data = {'message': "Something went wrong while checking multi sim check please try again later!"}
-                return Response(app.json_encoder.encode(data), status=CODES.get('ok'),
+                return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             else:
                 data = {'message': message}
-                return Response(app.json_encoder.encode(data), status=CODES.get('SEE_OTHER'),
+                return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
 
             # day_passed = (datetime.now() - reg_details.updated_at) > timedelta(1)
