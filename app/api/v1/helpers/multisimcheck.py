@@ -68,24 +68,41 @@ class MultiSimCheck:
                             nonremovable_uicc = list(map(int, re.findall(r'\d+', nonremovable_uicc)))
                             removable_euicc = list(map(int, re.findall(r'\d+', removable_euicc)))
                             removable_uicc = list(map(int, re.findall(r'\d+', removable_uicc)))
+                            if nonremovable_euicc:
+                                int_nonremovable_euicc = nonremovable_euicc[0]
+                            else:
+                                int_nonremovable_euicc = 0
+                            if nonremovable_uicc:
+                                int_nonremovable_uicc = nonremovable_uicc[0]
+                            else:
+                                int_nonremovable_uicc = 0
+                            if removable_euicc:
+                                int_removable_euicc = removable_euicc[0]
+                            else:
+                                int_removable_euicc = 0
+                            if removable_uicc:
+                                int_removable_uicc = removable_uicc[0]
+                            else:
+                                int_removable_uicc = 0
                             # print("nonremovable_euicc: {} nonremovable_uicc: {} removable_euicc: {} removable_uicc: {}".format(nonremovable_euicc, nonremovable_uicc, removable_euicc, removable_uicc))
-                            total_sim_capacity = list(
-                                map(sum, zip(nonremovable_euicc, nonremovable_uicc, removable_euicc, removable_uicc)))
-                            combo_euicc_uicc = [None]
+                            # total_sim_capacity = list(map(sum, zip(nonremovable_euicc, nonremovable_uicc, removable_euicc, removable_uicc)))
+                            total_sim_capacity = sum((
+                                                     int_nonremovable_euicc, int_nonremovable_uicc, int_removable_euicc,
+                                                     int_removable_uicc))
+                            # combo_euicc_uicc = [None]
+                            combo_euicc_uicc = str(total_sim_capacity)
                             # get the total sim capacity and check it with the number of device_imeis and
-                            if total_sim_capacity:  # if list is not empty
-                                combo_euicc_uicc = str(total_sim_capacity[0])
+                            if total_sim_capacity > 0:
                                 if combo_euicc_uicc == imeis_count:
                                     pass  # condition met
                                 else:
-                                    if int(imeis_count) > 2:
+                                    if not int(imeis_count) == int(combo_euicc_uicc):
                                         api_response.append({"combo_euicc_uicc_mismatch": "GSMA record for TAC: " + str(
                                             tac) + " shows: " + str(
                                             combo_euicc_uicc) + " count, Provided IMEIs: " + str_imeis.join(
                                             device_imeis) + " are: " + str(imeis_count)})
                                         api_response[0] = "False"
-                                    else:
-                                        pass
+                                    pass
                             else:
                                 if int(imeis_count) > 2:
                                     api_response.append({"combo_euicc_uicc_mismatch": "GSMA record for TAC: " + str(
