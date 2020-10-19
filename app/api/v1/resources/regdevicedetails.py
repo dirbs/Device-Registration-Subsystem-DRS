@@ -170,11 +170,13 @@ class DeviceDetailsRoutes(Resource):
                                                                      imeis)
 
             if multi_sim_result[0] == 'False':
-                message = ""
+                message = {}
+                i = 0
                 for msg in multi_sim_result:
                     if msg == 'False':
                         continue
-                    message += str(msg)
+                    message[i] = msg
+                    i += 1
                 return message
             elif multi_sim_result[0] is True:
                 return True
