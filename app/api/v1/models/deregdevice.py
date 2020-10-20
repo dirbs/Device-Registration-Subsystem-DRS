@@ -185,9 +185,8 @@ class DeRegDevice(db.Model):
                     DeviceQuotaModel.commit_quota_changes(user_quota)
                     imeis = DeRegDetails.get_normalized_imeis(reg_details)
 
-                    return_status = Utilities.de_register_imeis(imeis) # TODO: utilize return flag
+                    Utilities.de_register_imeis(imeis)
 
-                    # status = 'Approved' if return_status else 'Rejected'
                     for section in auto_approved_sections:
                         DeRegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed'
                                                  , section_status, reg_details.id)

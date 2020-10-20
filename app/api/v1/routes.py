@@ -38,7 +38,6 @@ from app.api.v1.resources.deregdetails import DeRegSectionRoutes
 from app.api.v1.resources.restart_process import RegistrationProcessRestart, DeRegistrationProcessRestart
 from .resources.deassociate import DeassociateImeis
 from .resources.associate import AssociateImeis, AssociateDuplicate
-from .resources.coreconf import CoreConf
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
 apidoc = ApiDocs(app, 'v1')
@@ -107,8 +106,6 @@ api.add_resource(DeassociateImeis, '/deassociate')
 api.add_resource(AssociateImeis, '/associate', '/associate/<uid>')
 
 api.add_resource(AssociateDuplicate, '/associate_duplicate')
-
-api.add_resource(CoreConf, '/core_conf')
 
 
 docs = apidoc.init_doc()

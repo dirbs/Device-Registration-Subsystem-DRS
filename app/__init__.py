@@ -47,7 +47,6 @@ except ParseException as e:
     app.logger.exception(e)
     sys.exit(1)
 
-CORE_BASE_URL = config['dirbs_core']['base_url']  # core api base url
 GLOBAL_CONF = config['global']  # load & export global configs
 
 app = ConfigApp(app, config).load_config()  # load configurations to the app instance
@@ -99,5 +98,6 @@ def add_security_headers(response):
 @babel.localeselector
 def get_locale():
     return request.accept_languages.best_match(app.config['SUPPORTED_LANGUAGES'])
+
 
 register_docs()

@@ -94,12 +94,11 @@ class Device(db.Model):
                         print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
             except Exception as e:
-                # app.logger.exception(e)
+                app.logger.exception(e)
                 db.session.rollback()
                 reg_details.update_processing_status('Failed')
                 reg_details.update_report_status('Failed')
                 db.session.commit()
-                # raise e
 
     @classmethod
     def sync_bulk_create(cls, reg_details, reg_device_id, app):
@@ -146,7 +145,6 @@ class Device(db.Model):
 
     @staticmethod
     def auto_approve(task_id, reg_details, flatten_imeis, app):
-        # TODO: Need to remove duplicated session which throw warning
         from app.api.v1.resources.reviewer import SubmitReview
         from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
         import json
@@ -183,7 +181,6 @@ class Device(db.Model):
                             file='duplicated_imeis.txt'
                         )
 
-                        # sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
                         status = 'Rejected'
                         sections_comment = sections_comment + ' Rejected, Duplicate IMEIS Found, Please check duplicate file'
                         section_status = 7
@@ -196,11 +193,9 @@ class Device(db.Model):
                         current_quota = user_quota.reg_quota
                         user_quota.reg_quota = current_quota - len(imeis)
                         DeviceQuotaModel.commit_quota_changes(user_quota)
-                        # message = 'Your request {id} has been approved'.format(id=reg_details.id)
                         sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
                     else:
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
-                        # message = 'Your request {id} has been rejected'.format(id=reg_details.id)
 
                     for section in auto_approved_sections:
                         RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed', section_status

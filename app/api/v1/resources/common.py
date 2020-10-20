@@ -87,6 +87,7 @@ class ServerConfigs(MethodResource):
         technologies = Technologies.get_technologies()
         device_types = DeviceType.get_device_types()
         status_types = Status.get_status_types()
+
         system_configs = {
             'label': 'automate_imei_request',
             'flag': app.config['AUTOMATE_IMEI_CHECK']
@@ -106,4 +107,5 @@ class ServerConfigs(MethodResource):
                                                   status_types=status_types,
                                                   device_types=device_types,
                                                   system_config=system_configs)).data
+
         return Response(json.dumps(response), status=200, mimetype='application/json')

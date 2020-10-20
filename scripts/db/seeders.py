@@ -20,8 +20,7 @@ from flask_script import Command  # pylint: disable=deprecated-module
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.models import technologies, documents, status, devicetype
-from app import ConfigParser
-
+from app import ConfigParser, app
 
 
 class Seed(Command):
@@ -77,7 +76,7 @@ class Seed(Command):
         # read and load DRS base configuration to the app
         try:
             config = ConfigParser('etc/config.yml').parse_config()
-        except ParseException as e:
+        except as e:
             app.logger.critical('exception encountered while parsing the config file, see details below')
             app.logger.exception(e)
             sys.exit(1)

@@ -21,10 +21,6 @@
 # DRS v1.0.0 Global configs
 #
 
-# DIRBS Core configurations
-dirbs_core:
-  base_url: '192.168.100.72:5000/'
-
 
 # DRS global configurations
 global:
@@ -52,7 +48,7 @@ global:
   max_imei_per_device: 5
 
   #URLS
-  dirbs_base_url: 'http://192.168.100.72:5000/'
+  dirbs_base_url: '0.0.0.0:5000/'
   core_api_v1: 'api/v1'
   core_api_v2: 'api/v2'
 
@@ -132,12 +128,12 @@ celery:
 
 # Bypass reviewer check for approving or rejecting application
 
-automate_imei_check: True
+automate_imei_check: True or False
 
 
 # Overwrite devices information with GSMA Device Details which is provided by user
 
-use_gsma_device_info: True
+use_gsma_device_info: True or False
 
 
  # DIRBS CORE Conditions & Reasons to be Non - Compliant
@@ -152,9 +148,6 @@ conditions:
 
   - name: 'duplicate'
     reason: 'Duplicate IMEI'
-
-#  - name: 'not_on_registration_list'
-#    reason: 'IMEI not found in registration list'
 
   - name: 'gsma_not_found'
     reason: 'TAC not in GSMA'
@@ -174,4 +167,5 @@ realtime_checks:
   is_paired: 'is_paired'
 
 stolen_info: 'stolen_status'
+
 registration_info: 'registration_status'

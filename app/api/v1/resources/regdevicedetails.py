@@ -17,7 +17,6 @@ import json
 import ast
 from flask import Response, request
 from flask_restful import Resource
-from marshmallow import ValidationError
 from flask_babel import lazy_gettext as _
 
 from app import app, db
@@ -133,8 +132,6 @@ class DeviceDetailsRoutes(Resource):
             db.session.commit()
             Device.create(reg_details, reg_device.id)
 
-            # reg_device = RegDevice.update(reg_device, args)
-
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
@@ -156,9 +153,7 @@ class DeviceDetailsRoutes(Resource):
         try:
             imeis = []
             for device_imeis in response:
-                # Fix-Needed: Converting string to list in ast raise error of leading zero in python3.8
-                # quotes_removal = [ast.literal_eval(re.sub(r'\b0+\B', '', i)) for i in device_imeis]
-                # quotes_removal = [ast.literal_eval(i) for i in device_imeis]
+                # Fixed: Converting string to list in ast raise error of leading zero in python3.8
                 quotes_removal = [i for i in device_imeis]
                 str_repr = str(quotes_removal).strip("[]")
                 str_repr = str_repr.replace("'", "")
@@ -264,12 +259,10 @@ class DeviceDetailsRoutes(Resource):
                 return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
 
-            # day_passed = (datetime.now() - reg_details.updated_at) > timedelta(1)
             processing_failed = reg_details.processing_status in [Status.get_status_id('Failed'),
                                                                   Status.get_status_id('New Request'),
                                                                   Status.get_status_id('Pending Review')]
             report_failed = reg_details.report_status == Status.get_status_id('Failed')
-            # report_timeout = reg_details.report_status == Status.get_status_id('Processing') and day_passed
             processing_required = processing_failed or report_failed
 
             reg_device = RegDevice.update(reg_device, args)
