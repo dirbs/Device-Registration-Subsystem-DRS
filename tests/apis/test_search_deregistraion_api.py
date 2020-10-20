@@ -1,7 +1,7 @@
 """
 module for search registration module api test
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2019-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -619,7 +619,7 @@ def test_valid_invalid_date(flask_app, db, app):
 
     # InValid Date Check
     body_data['search_args'] = {}
-    body_data['search_args']['created_at'] = '2020-12-11' + ',' + '2018-12-11'
+    body_data['search_args']['created_at'] = '2020-12-11' + ',' + '2019-12-11'
     rv = flask_app.post(SEARCH_API, data=json.dumps(body_data), headers=headers)
     assert rv.status_code == 200
     result = json.loads(rv.data.decode('utf-8'))

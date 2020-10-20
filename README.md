@@ -2,7 +2,7 @@
 
 # Device Registration Subsystem API
 ## License
-Copyright (c) 2019 Qualcomm Technologies, Inc.
+Copyright (c) 2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
