@@ -180,7 +180,7 @@ class Device(db.Model):
                             tracking_id=reg_details.tracking_id,
                             file='duplicated_imeis.txt'
                         )
-
+                        sections_comment = "Auto"
                         status = 'Rejected'
                         sections_comment = sections_comment + ' Rejected, Duplicate IMEIS Found, Please check duplicate file'
                         section_status = 7
