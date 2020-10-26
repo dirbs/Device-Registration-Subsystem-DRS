@@ -1,6 +1,6 @@
 """
 DRS Utilities package.
-Copyright (c) 2019-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -25,7 +25,7 @@ import pydash
 import requests
 from flask_babel import lazy_gettext as _
 
-from app import GLOBAL_CONF, db, app, CORE_BASE_URL
+from app import GLOBAL_CONF, db, app
 from app.api.v1.helpers.fileprocessor import Processor
 from app.api.v1.models.approvedimeis import ApprovedImeis
 from app.api.v1.helpers.reports_generator import BulkCommonResources
