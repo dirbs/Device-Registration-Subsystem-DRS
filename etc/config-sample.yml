@@ -1,7 +1,7 @@
 # configuration file
 
 # SPDX-License-Identifier: BSD-4-Clause-Clear
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 #    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -9,7 +9,7 @@
 #    All advertising materials mentioning features or use of this software, or any deployment of this software, or documentation accompanying any distribution of this software, must display the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 #    Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 # SPDX-License-Identifier: ZLIB-ACKNOWLEDGEMENT
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 # This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
 # Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
 #    The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
@@ -20,10 +20,6 @@
 #
 # DRS v1.0.0 Global configs
 #
-
-# DIRBS Core configurations
-dirbs_core:
-  base_url: 'DIRBS_CORE_BASE_API'
 
 
 # DRS global configurations
@@ -52,14 +48,16 @@ global:
   max_imei_per_device: 5
 
   #URLS
-  core_api_v1: 'CORE_VERSION_ONE_API'
-  core_api_v2: 'CORE_VERSION_TWO_API'
+  dirbs_base_url: '0.0.0.0:5000/'
+  core_api_v1: 'api/v1'
+  core_api_v2: 'api/v2'
 
 
   #Directories
-  dereg_sample_file: './deregistration/dereg_sample_file'
-  reg_sample_file: './registration/reg_sample_file.tsv'
-  upload_directory: 'UPLOAD_DIRECTORY'
+
+  dereg_sample_file: 'absolute_path_to_directory/Device-Registration-Subsystem/etc/deregistration/dereg_sample_file'
+  reg_sample_file: 'absolute_path_to_directory/Device-Registration-Subsystem/etc/registration/reg_sample_file.tsv'
+  upload_directory: 'absolute_path_to_directory'
 
   #languages support
   supported_languages:
@@ -68,12 +66,16 @@ global:
     - id
   default_language: en
 
+  #device association limit
+  association_limit: 10
+
 # DRS configurations for list generations
 # Configurations should be defined when deploying the software.
 lists:
   # directory path to generate the list,
   # only absolute paths to the directories are acceptable
-  path: ''
+  path: 'path_to_upload_dir'
+  ddcds_path: 'path_ddcds_list_direcoryt'
 
   # maximum number of workers used for the list generation
   # typically it should be 2 x num_of_cpus in the system
@@ -82,15 +84,15 @@ lists:
 # Postgresql settings used to build SqlAlchemy connection string and configs
 database:
   # Database name (an empty database on the first run)
-  database: drs
+  database: drs_intl
   # Host the PostgreSQL server runs on
-  host: drs_db
+  host: localhost
   # PostgreSQL port if not running on standard port 5432
   port: 5432
   # Database role/user that DRS will connect to
-  user: drs
+  user: postgres
   # Password used to connect to the database
-  password: drs
+  password: postgres
   # SQLAlchemy connection pool size, the number of connections to keep open inside
   # the connection pool
   # (for more details: https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -107,7 +109,7 @@ server:
   # To restrict https only, it will tell the client to convert all http requests to https
   # it will help in preventing MITM attacks.
   # value should be either "True" or "False"
-  restrict_https: True
+  restrict_https: False
 
 # celery configurations
 celery:
@@ -123,10 +125,47 @@ celery:
 
   CeleryTasks: ['app.api.v1.reports_generator']
 
+
+# Bypass reviewer check for approving or rejecting application
+
+automate_imei_check: True or False
+
+
+# Overwrite devices information with GSMA Device Details which is provided by user
+
+use_gsma_device_info: True or False
+
+
+ # DIRBS CORE Conditions & Reasons to be Non - Compliant
+
 conditions:
 
-  - name: 'condition_name'
-    reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'malformed'
+    reason: 'Malformed IMEI'
 
-  - name: 'condition_name'
-    reason: 'reason_to_be_non_compliant_w.r.t_condition'
+  - name: 'duplicate_large'
+    reason: 'Multiple Duplicate Found'
+
+  - name: 'duplicate'
+    reason: 'Duplicate IMEI'
+
+  - name: 'gsma_not_found'
+    reason: 'TAC not in GSMA'
+
+  - name: 'local_stolen'
+    reason: 'IMEI found on local stolen list'
+
+
+
+
+realtime_checks:
+  ever_observed_on_network: 'ever_observed_on_network'
+  gsma_not_found: 'gsma_not_found'
+  in_registration_list: 'in_registration_list'
+  invalid_imei: 'invalid_imei'
+  is_exempted_device: 'is_exempted_device'
+  is_paired: 'is_paired'
+
+stolen_info: 'stolen_status'
+
+registration_info: 'registration_status'
