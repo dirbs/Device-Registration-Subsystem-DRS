@@ -76,7 +76,7 @@ class Seed(Command):
         # read and load DRS base configuration to the app
         try:
             config = ConfigParser('etc/config.yml').parse_config()
-        except as e:
+        except Exception as e:
             app.logger.critical('exception encountered while parsing the config file, see details below')
             app.logger.exception(e)
             sys.exit(1)
