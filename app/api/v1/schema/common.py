@@ -1,6 +1,6 @@
 """
 DRS Common schema package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -60,6 +60,11 @@ class Document(Schema):
     required = fields.Boolean(required=True, description='Weather the document is required or not')
 
 
+class SysConfing(Schema):
+    label = fields.String(required=False, description='Label of the configuration')
+    flag = fields.Boolean(required=False, description='True or False')
+
+
 class Documents(Schema):
     """Response schema for supported documents."""
 
@@ -84,6 +89,9 @@ class ServerConfigs(Schema):
     device_types = fields.List(fields.Nested(Common, required=True),
                                required=False,
                                description='List of the supported device types')
+    system_config = fields.List(fields.Nested(SysConfing, required=True),
+                               required=False,
+                               description='List of configured features')
 
 
 class RequestStatusTypes(Enum):

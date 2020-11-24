@@ -1,6 +1,6 @@
 """
 DRS Utilities package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -25,10 +25,12 @@ import pydash
 import requests
 from flask_babel import lazy_gettext as _
 
-from app import GLOBAL_CONF, db, app, CORE_BASE_URL
+from app import GLOBAL_CONF, db, app
 from app.api.v1.helpers.fileprocessor import Processor
 from app.api.v1.models.approvedimeis import ApprovedImeis
 from app.api.v1.helpers.reports_generator import BulkCommonResources
+# from app.api.v1.models.regdetails import RegDetails
+# from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
 
 
 class Utilities:
@@ -89,6 +91,7 @@ class Utilities:
         """Method to get compliance summary and report."""
         try:
             response = BulkCommonResources.get_summary.apply_async((imeis, tracking_id))
+            # response = BulkCommonResources.get_summary(imeis, tracking_id)
             return response.id
         except Exception as e:
             app.logger.exception(e)
@@ -187,15 +190,34 @@ class Utilities:
                 result = task.get()
                 req.summary = json.dumps({'summary': result})
                 req.report = result.get('compliant_report_name')
-                req.update_report_status('Processed')
-                req.save()
-                db.session.commit()
+
+                if not app.config['AUTOMATE_IMEI_CHECK']:
+                    req.update_report_status('Processed')
+                    req.save()
+                    db.session.commit()
+
                 app.logger.info('task_id:{0}-request_id:{1}-status:COMPLETED'.
                                 format(task_id, req.id, task.state))
             except Exception as e:
                 db.session.rollback()
-                req.update_report_status('Failed')
+                if not app.config['AUTOMATE_IMEI_CHECK']:
+                    req.update_report_status('Failed')
+                    req.update_status('Failed')
                 db.session.commit()
+
+    @staticmethod
+    def check_request_status(task_id):
+        task = BulkCommonResources.get_summary.AsyncResult(task_id)
+
+        while task.state != 'SUCCESS':
+            task = BulkCommonResources.get_summary.AsyncResult(task_id)
+
+        if task.state == 'SUCCESS':
+            result = task.get()
+            return result
+        else:
+            return False
+
 
     @classmethod
     def bulk_normalize(cls, imeis):
@@ -230,7 +252,7 @@ class Utilities:
     @classmethod
     def get_gsma_device(cls, tacs):
         """Method to get device details from CORE GSMA TAC API."""
-        tac_url = app.config['CORE_BASE_URL'] + '/tac'
+        tac_url = app.config['CORE_BASE_URL'] + app.config['API_VERSION'] +'/tac'
         tacs = {"tacs": tacs}
         response = requests.post(url=tac_url, json=tacs)
         return response.json()
@@ -409,7 +431,7 @@ class Utilities:
 
         This method expect a SET of tacs.
         """
-        request_url = '{base_url}/tac'.format(base_url=app.config['CORE_BASE_URL'])
+        request_url = '{base_url}{api}/tac'.format(base_url=app.config['CORE_BASE_URL'], api=app.config['API_VERSION'])
         if type(tacs) is not list:
             raise ValueError('Bad argument format for tacs')
         else:

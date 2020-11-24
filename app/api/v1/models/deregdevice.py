@@ -1,6 +1,6 @@
 """
 DRS De-Registration Device Model package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -132,11 +132,93 @@ class DeRegDevice(db.Model):
                 dereg.update_processing_status('Processed')
                 db.session.commit()
                 task_id = Utilities.generate_summary(imeis_list, dereg.tracking_id)
-                Utilities.pool_summary_request(task_id, dereg, app)
+                if task_id:
+                    Utilities.pool_summary_request(task_id, dereg, app)
+                else:
+                    dereg.update_processing_status('Failed')
+                    db.session.commit()
+
+                if app.config['AUTOMATE_IMEI_CHECK']:
+                    if DeRegDevice.auto_approve(task_id, dereg):
+                        print("Auto Approved/Rejected DeRegistration Application Id:" + str(dereg.id))
+
             except Exception as e:
                 app.logger.exception(e)
+                db.session.rollback()
                 dereg.update_processing_status('Failed')
+                dereg.update_report_status('Failed')
                 db.session.commit()
+
+    @staticmethod
+    def auto_approve(task_id, reg_details):
+        # TODO: Need to remove duplicated session which throws warning
+        from app.api.v1.resources.reviewer import SubmitReview
+        from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        import json
+        sr = SubmitReview()
+
+        try:
+            result = Utilities.check_request_status(task_id)
+            section_status = 6
+            sections_comment = "Auto"
+            auto_approved_sections = ['device_quota', 'device_description', 'imei_classification',
+                                      'imei_registration']
+
+            if result:
+                if result['non_compliant'] != 0 or result['stolen'] != 0 or result['compliant_active'] != 0 \
+                        or result['provisional_non_compliant'] != 0:
+                    sections_comment = sections_comment + ' Rejected, Device/s found in Non-Compliant State'
+                    status = 'Rejected'
+                    section_status = 7
+                    message = 'Your request {id} has been rejected because Non-Compliant Device Found in it.'.format(id=reg_details.id)
+                else:
+                    sections_comment = sections_comment + ' Approved'
+                    status = 'Approved'
+                    message = 'Your request {id} has been Approved'.format(id=reg_details.id)
+
+                if status == 'Approved':
+                    # checkout device quota
+                    imeis = DeRegDetails.get_normalized_imeis(reg_details)
+                    user_quota = DeviceQuotaModel.get(reg_details.user_id)
+                    current_quota = user_quota.reg_quota
+                    user_quota.reg_quota = current_quota - len(imeis)
+                    DeviceQuotaModel.commit_quota_changes(user_quota)
+                    imeis = DeRegDetails.get_normalized_imeis(reg_details)
+
+                    Utilities.de_register_imeis(imeis)
+
+                    for section in auto_approved_sections:
+                        DeRegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed'
+                                                 , section_status, reg_details.id)
+
+                sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                        request_type='de-registration', request_status=section_status,
+                                                        message=message)
+
+                reg_details.summary = json.dumps({'summary': result})
+                reg_details.report = result.get('compliant_report_name')
+                reg_details.update_report_status('Processed')
+                reg_details.update_status(status)
+                reg_details.report_allowed = True
+                reg_details.save()
+                db.session.commit()
+                return True
+            else:
+                reg_details.update_processing_status('Failed')
+                reg_details.update_report_status('Failed')
+                reg_details.update_status('Failed')
+                db.session.commit()
+
+        except Exception as e: # pragma: no cover
+            app.logger.exception(e)
+            db.session.rollback()
+            reg_details.update_processing_status('Failed')
+            reg_details.update_status('Failed')
+            message = 'Your request {id} has failed please re-initiate device request'.format(id=reg_details.id)
+            sr._SubmitReview__generate_notification(user_id=reg_details.user_id, request_id=reg_details.id,
+                                                    request_type='registration', request_status=7,
+                                                    message=message)
+            db.session.commit()
 
     def save(self):
         """Save the current state of the model."""

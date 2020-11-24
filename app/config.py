@@ -1,6 +1,6 @@
 """
 DRS configuration file parser.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -79,7 +79,8 @@ class ConfigApp:
         self.app.config['DRS_LISTS'] = lists_config.get('path')  # lists dir
         self.app.config['DDCDS_LISTS'] = lists_config.get('ddcds_path')  # ddcds lists dir
         self.app.config['STRICT_HTTPS'] = self.config.get('server')['restrict_https']
-        self.app.config['CORE_BASE_URL'] = global_config.get('core_api_v2')
+        self.app.config['CORE_BASE_URL'] = global_config.get('dirbs_base_url')
+        self.app.config['API_VERSION'] = global_config.get('core_api_v2')
         self.app.config['BABEL_DEFAULT_LOCALE'] = global_config.get('default_language')
         self.app.config['SUPPORTED_LANGUAGES'] = global_config.get('supported_languages')
         self.app.config['SQLALCHEMY_DATABASE_URI'] = self.database_uri()
@@ -92,6 +93,8 @@ class ConfigApp:
         self.app.config['ASSOCIATION_LIMIT'] = int(global_config.get('association_limit'))
         self.app.config['MIN_IMEI_LENGTH'] = int(global_config.get('min_imei_length'))
         self.app.config['MAX_IMEI_LENGTH'] = int(global_config.get('max_imei_length'))
+        self.app.config['AUTOMATE_IMEI_CHECK'] = self.config.get('automate_imei_check')
+        self.app.config['USE_GSMA_DEVICE_INFO'] = self.config.get('use_gsma_device_info')
 
         self.app.config['CELERY_BROKER_URL'] = celery_config['RabbitmqUrl']
         self.app.config['result_backend'] = celery_config['RabbitmqBackend']

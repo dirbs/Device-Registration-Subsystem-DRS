@@ -1,6 +1,6 @@
 """
 DRS common resource package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -87,6 +87,16 @@ class ServerConfigs(MethodResource):
         technologies = Technologies.get_technologies()
         device_types = DeviceType.get_device_types()
         status_types = Status.get_status_types()
+
+        system_configs = {
+            'label': 'automate_imei_request',
+            'flag': app.config['AUTOMATE_IMEI_CHECK']
+        },\
+        {
+            'label': 'overwrite_device_info',
+            'flag': app.config['USE_GSMA_DEVICE_INFO']
+        }
+
         documents = {
             'registration': Documents.get_documents('registration'),
             'de_registration': Documents.get_documents('deregistration')
@@ -95,5 +105,7 @@ class ServerConfigs(MethodResource):
         response = ServerConfigSchema().dump(dict(technologies=technologies,
                                                   documents=documents,
                                                   status_types=status_types,
-                                                  device_types=device_types)).data
+                                                  device_types=device_types,
+                                                  system_config=system_configs)).data
+
         return Response(json.dumps(response), status=200, mimetype='application/json')

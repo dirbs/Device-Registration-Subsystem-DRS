@@ -1,6 +1,6 @@
 """
 Project Initialization package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -35,11 +35,9 @@ datetime.strptime('', '')
 
 app = Flask(__name__)
 app.json_encoder = JSONEncoder()
-
 CORS(app)
 Api(app)
 babel = Babel(app)
-
 
 # read and load DRS base configuration to the app
 try:
@@ -49,11 +47,11 @@ except ParseException as e:
     app.logger.exception(e)
     sys.exit(1)
 
-CORE_BASE_URL = config['dirbs_core']['base_url']  # core api base url
 GLOBAL_CONF = config['global']  # load & export global configs
-app = ConfigApp(app, config).load_config()  # load configurations to the app instance
-db = SQLAlchemy(session_options={'autocommit': False})
 
+app = ConfigApp(app, config).load_config()  # load configurations to the app instance
+
+db = SQLAlchemy(session_options={'autocommit': False})
 db.init_app(app)
 
 # requests session
@@ -72,7 +70,7 @@ celery.conf.update(app.config)
 app.config['imports'] = app.config['CeleryTasks']
 
 # we really need wild-card import here for now
-from app.api.v1.routes import *  # pylint: disable=wildcard-import
+from app.api.v1.routes import register_docs  # pylint: disable=wildcard-import
 
 
 @app.after_request
@@ -100,5 +98,6 @@ def add_security_headers(response):
 @babel.localeselector
 def get_locale():
     return request.accept_languages.best_match(app.config['SUPPORTED_LANGUAGES'])
+
 
 register_docs()

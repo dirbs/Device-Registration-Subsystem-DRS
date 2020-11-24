@@ -1,6 +1,6 @@
 """
 DRS De-Registration device resource package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -88,7 +88,8 @@ class DeRegDeviceRoutes(Resource):
                 created = DeRegDevice.bulk_create(args, dereg)
                 device_id_tac_map = Utilities.get_id_tac_map(created)
                 devices = device_schema.dump(created, many=True)
-                dereg.update_status('Awaiting Documents')
+                dereg_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+                dereg.update_status(dereg_status) # TODO: Change status if automate check is enables
                 db.session.commit()
                 DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
                 response = {'devices': devices.data, 'dreg_id': dereg.id}
@@ -135,7 +136,8 @@ class DeRegDeviceRoutes(Resource):
             else:
                 # day_passed = (datetime.now() - dereg.updated_at) > timedelta(1)
                 processing_failed = dereg.processing_status in [Status.get_status_id('Failed'),
-                                                                      Status.get_status_id('New Request')]
+                                                                Status.get_status_id('New Request'),
+                                                                Status.get_status_id('Pending Review')]
                 report_failed = dereg.report_status == Status.get_status_id('Failed')
                 # report_timeout = dereg.report_status == Status.get_status_id('Processing') and day_passed
                 processing_required = processing_failed or report_failed

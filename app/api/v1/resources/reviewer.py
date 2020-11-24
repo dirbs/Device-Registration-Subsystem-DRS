@@ -1,6 +1,6 @@
 """
 DRS reviewer resource package.
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -681,6 +681,12 @@ class SubmitReview(MethodResource):
                         provisional_imei.delta_status = 'remove'
                         provisional_imei.status = 'removed'
                         changed_imeis.append(provisional_imei)
+                    else:
+                        provisional_imei.delta_status = 'remove'
+                        provisional_imei.status = 'removed'
+                        provisional_imei.removed = True
+                        changed_imeis.append(provisional_imei)
+
         ApprovedImeis.bulk_insert_imeis(changed_imeis)
 
     @doc(description='Submit a request after final review', tags=['Reviewers'])
@@ -1023,7 +1029,7 @@ class IMEIClassification(MethodResource):
                     return Response(json.dumps(IMEIClassificationSchema().dump(res).data),
                                     status=200, mimetype='application/json')
                 else:
-                    res = {}
+                    res = {'error': ['request {id} summary not generated yet'.format(id=request_id)]}
                     return Response(json.dumps(res), status=200, mimetype='application/json')
             else:
                 res = {'error': ['request {id} does not exists'.format(id=request_id)]}

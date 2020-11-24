@@ -1,29 +1,14 @@
-# Reusable translation file.
-# SPDX-License-Identifier: BSD-4-Clause-Clear
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
-# All rights reserved.
-# Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
-#    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-#    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-#    All advertising materials mentioning features or use of this software, or any deployment of this software, or documentation accompanying any distribution of this software, must display the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-#    Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-# SPDX-License-Identifier: ZLIB-ACKNOWLEDGEMENT
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
-# This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
-# Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
-#    The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-#    Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-#    This notice may not be removed or altered from any source distribution.
-# NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
+# Spanish translations for PROJECT.
+# Copyright (C) 2020 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-03-21 09:54+0500\n"
-"PO-Revision-Date: 2019-03-01 09:56+0500\n"
+"POT-Creation-Date: 2020-09-04 17:21+0500\n"
+"PO-Revision-Date: 2020-09-04 17:23+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
 "Language-Team: es <LL@li.org>\n"
@@ -31,270 +16,261 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
+"Generated-By: Babel 2.8.0\n"
 
-#: app/api/v1/helpers/error_handlers.py:37
+#: app/api/v1/helpers/error_handlers.py:31
 msgid "RESOURCE_NOT_FOUND"
-msgstr "RECURSO NO ENCONTRADO"
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:92
+#: app/api/v1/helpers/error_handlers.py:86
 msgid "method not allowed"
-msgstr "Método no permitido"
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:99
+#: app/api/v1/helpers/error_handlers.py:93
 msgid "Registration Request not found."
-msgstr "Solicitud de registro no encontrada."
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:100
+#: app/api/v1/helpers/error_handlers.py:94
 msgid "De-Registration Request not found."
-msgstr "Solicitud de-cancelación de registro no encontrada."
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:101
+#: app/api/v1/helpers/error_handlers.py:95
 msgid "Report not found."
-msgstr "Informe no encontrado."
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:102
+#: app/api/v1/helpers/error_handlers.py:96
 msgid "Report not allowed."
-msgstr "Informe no permitido."
+msgstr ""
 
-#: app/api/v1/helpers/error_handlers.py:103
+#: app/api/v1/helpers/error_handlers.py:97
 msgid "Document not found."
-msgstr "Documento no encontrado."
+msgstr ""
+
+#: app/api/v1/helpers/fileprocessor.py:153
+msgid "IMEIs per device count in file is not same as input."
+msgstr ""
+
+#: app/api/v1/helpers/fileprocessor.py:155
+#: app/api/v1/helpers/fileprocessor.py:175
+msgid "Device count in file is not same as input"
+msgstr ""
+
+#: app/api/v1/helpers/fileprocessor.py:157
+#: app/api/v1/helpers/fileprocessor.py:177
+msgid "Invalid IMEIs in the input file"
+msgstr ""
 
 #: app/api/v1/helpers/fileprocessor.py:159
-msgid "IMEIs per device count in file is not same as input."
-msgstr "IMEIs por dispositivo en el archivo no es lo mismo que la entrada."
+#: app/api/v1/helpers/fileprocessor.py:179
+msgid "Duplicate IMEIs in the input file"
+msgstr ""
 
 #: app/api/v1/helpers/fileprocessor.py:161
-#: app/api/v1/helpers/fileprocessor.py:181
-msgid "Device count in file is not same as input"
-msgstr "El conteo de dispositivos en el archivo no es lo mismo que la entrada"
+msgid "Some IMEIs are missing in the columns"
+msgstr ""
 
 #: app/api/v1/helpers/fileprocessor.py:163
-#: app/api/v1/helpers/fileprocessor.py:183
-msgid "Invalid IMEIs in the input file"
-msgstr "IMEIs inválidos en el archivo de entrada"
+msgid "Rows limit is 10000000 for single request"
+msgstr ""
 
 #: app/api/v1/helpers/fileprocessor.py:165
-#: app/api/v1/helpers/fileprocessor.py:185
-msgid "Duplicate IMEIs in the input file"
-msgstr "Duplicar IMEIs en el archivo de entrada"
-
-#: app/api/v1/helpers/fileprocessor.py:167
-msgid "Some IMEIs are missing in the columns"
-msgstr "Faltan algunos IMEI en las columnas"
-
-#: app/api/v1/helpers/fileprocessor.py:169
-msgid "Rows limit is 10000000 for single request"
-msgstr "El límite de filas es de 10000000 para una sola solicitud"
-
-#: app/api/v1/helpers/fileprocessor.py:171
-#: app/api/v1/helpers/fileprocessor.py:187
+#: app/api/v1/helpers/fileprocessor.py:181
 msgid "Invalid IMEIs Format in input file"
-msgstr "Formato IMEI no válido en el archivo de entrada"
+msgstr ""
 
-#: app/api/v1/helpers/utilities.py:337
+#: app/api/v1/helpers/utilities.py:291
 msgid "size of file is greator than 26 MB which is not allowed"
-msgstr "El tamaño del archivo es superior a 26 MB, que no está permitido."
+msgstr ""
 
-#: app/api/v1/helpers/validators.py:51
+#: app/api/v1/helpers/validators.py:24
 msgid "invalid imei"
-msgstr "imei inválido"
+msgstr ""
 
-#: app/api/v1/helpers/validators.py:64
+#: app/api/v1/helpers/validators.py:30
 #, python-format
 msgid "%(key)s value should be between 1 and 1000"
-msgstr "%(key)s El valor debe estar entre 1 y 1000"
+msgstr ""
 
-#: app/api/v1/helpers/validators.py:66
+#: app/api/v1/helpers/validators.py:32
 #, python-format
 msgid "%(key)s cannot start or ends with spaces"
-msgstr "%(key)s No se puede comenzar ni terminar con espacios."
+msgstr ""
 
-#: app/api/v1/helpers/validators.py:68
+#: app/api/v1/helpers/validators.py:34
 #, python-format
 msgid "%(key)s cannot start or ends with tabs"
-msgstr "%(key)s no puede comenzar o terminar con pestañas"
+msgstr ""
 
-#: app/api/v1/helpers/validators.py:70
+#: app/api/v1/helpers/validators.py:36
 #, python-format
 msgid "%(key)s cannot end with line breaks"
-msgstr "%(key)s no puede terminar con saltos de línea"
+msgstr ""
 
-#: app/api/v1/models/deregdetails.py:227 app/api/v1/models/regdetails.py:190
+#: app/api/v1/models/deregdetails.py:221 app/api/v1/models/regdetails.py:184
 msgid "The request is already closed"
-msgstr "La solicitud ya está cerrada."
+msgstr ""
 
-#: app/api/v1/resources/common.py:69
+#: app/api/v1/resources/common.py:63
 msgid "path cannot be empty"
-msgstr "el camino no puede estar vacío"
+msgstr ""
 
-#: app/api/v1/resources/common.py:77
+#: app/api/v1/resources/common.py:71
 msgid "Unable to process the request"
-msgstr "No se puede procesar la solicitud"
+msgstr ""
 
-#: app/api/v1/resources/common.py:81
+#: app/api/v1/resources/common.py:75
 msgid "file not found or bad file path"
-msgstr "archivo no encontrado o ruta de archivo incorrecta"
+msgstr ""
 
-#: app/api/v1/resources/deregdetails.py:70
-#: app/api/v1/resources/deregdevice.py:57
-#: app/api/v1/resources/deregdevice.py:106
-#: app/api/v1/resources/deregdevice.py:163
-#: app/api/v1/resources/regdetails.py:68
-#: app/api/v1/resources/regdevicedetails.py:60
+#: app/api/v1/resources/deregdetails.py:64
+#: app/api/v1/resources/deregdevice.py:51
+#: app/api/v1/resources/deregdevice.py:100
+#: app/api/v1/resources/deregdevice.py:157
+#: app/api/v1/resources/regdetails.py:62
+#: app/api/v1/resources/regdevicedetails.py:54
 msgid "Failed to retrieve response, please try later"
-msgstr "Error al recuperar la respuesta, por favor intente más tarde"
+msgstr ""
 
-#: app/api/v1/resources/deregdetails.py:115
-#: app/api/v1/resources/deregdetails.py:191
-#: app/api/v1/resources/regdetails.py:114
-#: app/api/v1/resources/regdetails.py:222
+#: app/api/v1/resources/deregdetails.py:109
+#: app/api/v1/resources/deregdetails.py:185
+#: app/api/v1/resources/regdetails.py:108
+#: app/api/v1/resources/regdetails.py:216
 msgid "Registration request failed, check upload path or database connection"
-msgstr "Error en la solicitud de registro, verifique la ruta de carga o la conexión de la base de datos"
+msgstr ""
 
-#: app/api/v1/resources/deregdetails.py:235
+#: app/api/v1/resources/deregdetails.py:229
 msgid "De-Registration request failed, check upload path or database connection"
-msgstr "Falló la solicitud de cancelación de registro, verifique la ruta de cargao la conexión de la base de datos"
+msgstr ""
 
-#: app/api/v1/resources/deregdocuments.py:62
-#: app/api/v1/resources/regdocuments.py:68
+#: app/api/v1/resources/deregdocuments.py:56
+#: app/api/v1/resources/regdocuments.py:62
 msgid "Error retrieving results. Please try later."
-msgstr "Error al recuperar los resultados. Por favor intente mas tarde."
+msgstr ""
 
-#: app/api/v1/resources/deregdocuments.py:109
-#: app/api/v1/resources/regdocuments.py:116
+#: app/api/v1/resources/deregdocuments.py:103
+#: app/api/v1/resources/regdocuments.py:110
 msgid "request document addition failed, check for valid formats."
-msgstr "solicitud de adición de documento fallida, verifique los formatos válidos."
+msgstr ""
 
-#: app/api/v1/resources/deregdocuments.py:161
-#: app/api/v1/resources/regdocuments.py:170
+#: app/api/v1/resources/deregdocuments.py:155
+#: app/api/v1/resources/regdocuments.py:164
 msgid "request document updation failed, please try again later."
-msgstr "Error al solicitar la actualización del documento, inténtalo de nuevo más tarde."
+msgstr ""
 
-#: app/api/v1/resources/regdetails.py:179
+#: app/api/v1/resources/regdetails.py:173
 msgid ""
 "Registration update request failed, check upload path or database "
 "connection"
-msgstr "Falló la solicitud de actualización de registro, verifique la ruta de carga o la conexión de la base de datos"
+msgstr ""
 
-#: app/api/v1/resources/regdevicedetails.py:103
-#: app/api/v1/resources/regdevicedetails.py:155
+#: app/api/v1/resources/regdevicedetails.py:97
+#: app/api/v1/resources/regdevicedetails.py:149
 msgid "request device addition failed"
-msgstr "solicitud de adición de dispositivo falló"
+msgstr ""
 
-#: app/api/v1/resources/restart_process.py:65
-#: app/api/v1/resources/restart_process.py:111
+#: app/api/v1/resources/restart_process.py:59
+#: app/api/v1/resources/restart_process.py:105
 msgid "This request cannot be processed"
-msgstr "Esta solicitud no puede ser procesada"
+msgstr ""
 
-#: app/api/v1/resources/restart_process.py:75
-#: app/api/v1/resources/restart_process.py:120
+#: app/api/v1/resources/restart_process.py:69
+#: app/api/v1/resources/restart_process.py:114
 msgid "failed to restart process"
-msgstr "no se pudo reiniciar el proceso"
+msgstr ""
 
-#: app/api/v1/resources/reviewer.py:87 app/api/v1/resources/reviewer.py:110
+#: app/api/v1/resources/reviewer.py:82 app/api/v1/resources/reviewer.py:105
 #, python-format
 msgid "incomplete request %(id)s can not be assigned/reviewed"
-msgstr "La solicitud incompleta %(id)s no puede ser asignada/revisada"
+msgstr ""
 
-#: app/api/v1/resources/reviewer.py:218 app/api/v1/resources/reviewer.py:248
+#: app/api/v1/resources/reviewer.py:213 app/api/v1/resources/reviewer.py:243
 msgid "request must be processed before reviewed."
-msgstr "La solicitud debe ser procesada antes de ser revisada."
+msgstr ""
 
-#: app/api/v1/resources/reviewer.py:752
+#: app/api/v1/resources/reviewer.py:755
 #, python-format
 msgid "unable to approve case %(id)s, duplicated imeis found"
-msgstr "no se pudo aprobar el caso %(id)s, se encontraron imeis duplicados"
+msgstr ""
 
-#: app/api/v1/resources/reviewer.py:891
+#: app/api/v1/resources/reviewer.py:894
 msgid "Unable to approve, invalid imeis found"
-msgstr "No se puede aprobar, se encontraron imeis inválidos"
+msgstr ""
+
+#: app/api/v1/schema/deregdetailsupdate.py:73
+#: app/api/v1/schema/regdetailsupdate.py:88
+msgid "The request status is already Closed"
+msgstr ""
+
+#: app/api/v1/schema/deregdetailsupdate.py:76
+#: app/api/v1/schema/regdetailsupdate.py:91
+#, python-format
+msgid "The request status is %(status)s, which cannot be Closed"
+msgstr ""
 
 #: app/api/v1/schema/deregdetailsupdate.py:79
 #: app/api/v1/schema/regdetailsupdate.py:94
-msgid "The request status is already Closed"
-msgstr "El estado de la solicitud ya está cerrado."
+msgid "The request is in Progress, which cannot be updated"
+msgstr ""
 
 #: app/api/v1/schema/deregdetailsupdate.py:82
-#: app/api/v1/schema/regdetailsupdate.py:97
-#, python-format
-msgid "The request status is %(status)s, which cannot be Closed"
-msgstr "El estado de la solicitud es %(status)s, que no se puede cerrar"
-
 #: app/api/v1/schema/deregdetailsupdate.py:85
-#: app/api/v1/schema/regdetailsupdate.py:100
-msgid "The request is in Progress, which cannot be updated"
-msgstr "La solicitud está en progreso, que no se puede actualizar"
-
 #: app/api/v1/schema/deregdetailsupdate.py:88
-#: app/api/v1/schema/deregdetailsupdate.py:91
-#: app/api/v1/schema/deregdetailsupdate.py:94
-#: app/api/v1/schema/devicedetailsupdate.py:64
-#: app/api/v1/schema/regdetailsupdate.py:103
-#: app/api/v1/schema/regdocumentsupdate.py:76
+#: app/api/v1/schema/devicedetailsupdate.py:58
+#: app/api/v1/schema/regdetailsupdate.py:97
+#: app/api/v1/schema/regdocumentsupdate.py:70
 #, python-format
 msgid "The request status is %(status)s, which cannot be updated"
-msgstr "El estado de la solicitud es %(status)s, que no se puede actualizar"
+msgstr ""
 
-#: app/api/v1/schema/deregdevice.py:66 app/api/v1/schema/devicedetails.py:74
+#: app/api/v1/schema/deregdevice.py:60 app/api/v1/schema/devicedetails.py:68
 msgid "This step can only be performed for New Request"
-msgstr "Este paso solo se puede realizar para Nueva Solicitud"
+msgstr ""
 
-#: app/api/v1/schema/deregdocuments.py:65
-#: app/api/v1/schema/deregdocumentsupdate.py:74
-#: app/api/v1/schema/regdocuments.py:67
-#: app/api/v1/schema/regdocumentsupdate.py:86
+#: app/api/v1/schema/deregdocuments.py:59
+#: app/api/v1/schema/deregdocumentsupdate.py:68
+#: app/api/v1/schema/regdocuments.py:61
+#: app/api/v1/schema/regdocumentsupdate.py:80
 #, python-format
 msgid "File format %(format)s is not allowed"
-msgstr "El formato de archivo %(format)s no está permitido"
+msgstr ""
 
-#: app/api/v1/schema/deregdocuments.py:76
-#: app/api/v1/schema/deregdocumentsupdate.py:85
-#: app/api/v1/schema/regdocuments.py:78
-#: app/api/v1/schema/regdocumentsupdate.py:97
+#: app/api/v1/schema/deregdocuments.py:70
+#: app/api/v1/schema/deregdocumentsupdate.py:79
+#: app/api/v1/schema/regdocuments.py:72
+#: app/api/v1/schema/regdocumentsupdate.py:91
 msgid "File names should be unique"
-msgstr "Los nombres de los archivos deben ser únicos"
+msgstr ""
 
-#: app/api/v1/schema/deregdocuments.py:106
-#: app/api/v1/schema/regdocuments.py:108
+#: app/api/v1/schema/deregdocuments.py:100
+#: app/api/v1/schema/regdocuments.py:102
 msgid "This step can only be performed for request with Awaiting Document status"
-msgstr "Este paso solo se puede realizar para solicitud con estado de documento en espera"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:37
+#: app/api/v1/schema/devicedetailsupdate.py:31
 msgid "In Review"
-msgstr "En revisión"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:37
+#: app/api/v1/schema/devicedetailsupdate.py:31
 msgid "Approved"
-msgstr "Aprobado"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:37
+#: app/api/v1/schema/devicedetailsupdate.py:31
 msgid "Rejected"
-msgstr "Rechazado"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:37
+#: app/api/v1/schema/devicedetailsupdate.py:31
 msgid "Closed"
-msgstr "Cerrado"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:38
+#: app/api/v1/schema/devicedetailsupdate.py:32
 msgid "New Request"
-msgstr "Nueva solicitud"
+msgstr ""
 
-#: app/api/v1/schema/devicedetailsupdate.py:38
+#: app/api/v1/schema/devicedetailsupdate.py:32
 msgid "Awaiting Documents"
-msgstr "En espera de documentos"
+msgstr ""
 
-#: app/api/v1/schema/regdetails.py:84 app/api/v1/schema/regdetailsupdate.py:148
+#: app/api/v1/schema/regdetails.py:78 app/api/v1/schema/regdetailsupdate.py:142
 msgid "Duplicate IMEIs in request"
-msgstr "Duplicar IMEIs en solicitud"
-
-#~ msgid "No data found"
-#~ msgstr "Datos no encontrados"
-
-#~ msgid "File format %(format) is not allowed"
-#~ msgstr ""
-
-#~ msgid "The request status is %(status), which cannot be updated"
-#~ msgstr "El estado de la solicitud es %(status)s, que no se puede actualizar"
+msgstr ""
 
