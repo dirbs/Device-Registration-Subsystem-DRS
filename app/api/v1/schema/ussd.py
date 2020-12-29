@@ -13,6 +13,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 from marshmallow import Schema, fields, validates, pre_load, pre_dump, post_dump, post_load, validate
 from app.api.v1.helpers.validators import *
 from app.api.v1.models.devicequota import DeviceQuota
@@ -24,40 +25,38 @@ from flask_babel import gettext as _
 
 
 class RegistrationDetailsSchema(Schema):
-    """Schema for Registration routes."""
+    """Schema for USSD Registration routes."""
 
-    id = fields.Int(required=False)
-    device_count = fields.Int(required=True, error_messages={'required': 'Device count is required'})
-    reviewer_id = fields.Str(required=False)
-    reviewer_name = fields.Str(required=False)
-    report_allowed = fields.Boolean(required=False)
-    user_id = fields.Str(required=True, error_messages={'required': 'User Id is required'})
-    user_name = fields.Str(required=True, error_messages={'required': 'User Name is required'})
-    imei_per_device = fields.Int(required=True, error_messages={'required': 'Imei per device count is required'})
-    m_location = fields.Str(required=True, error_messages={'required': 'manufacturing location is a required field'})
-    file = fields.Str(required=False)
-    file_link = fields.Str()
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime()
-    imeis = fields.List(fields.List(fields.Str(validate=validate_imei)), required=False)
-    imeis_count = fields.Int(required=False)
-    status_label = fields.Str(required=False)
+    # id = fields.Int(required=False)
+    # reviewer_id = fields.Str(required=False)
+    # reviewer_name = fields.Str(required=False)
+    # report_allowed = fields.Boolean(required=False)
+    # user_id = fields.Str(required=True, error_messages={'required': 'User Id is required'})
+    # user_name = fields.Str(required=True, error_messages={'required': 'User Name is required'})
+    # imei_per_device = fields.Int(required=True, error_messages={'required': 'Imei per device count is required'})
+    # m_location = fields.Str(required=True, error_messages={'required': 'manufacturing location is a required field'})
+    # file = fields.Str(required=False)
+    # file_link = fields.Str()
+    # created_at = fields.DateTime()
+    # updated_at = fields.DateTime()
+    # imeis_count = fields.Int(required=False)
+    # status_label = fields.Str(required=False)
     # processed = fields.Boolean()
-    processing_status_label = fields.Str()
-    report_status_label = fields.Str()
-    tracking_id = fields.Str()
-    report = fields.String()
-    duplicate_imeis_file = fields.String(missing='')
-    cnic = fields.String(required=True, error_messages={'required': 'cnic is required'})
+    # processing_status_label = fields.Str()
+    # report_status_label = fields.Str()
+    # tracking_id = fields.Str()
+    # report = fields.String()
+    # duplicate_imeis_file = fields.String(missing='')
+    cnic = fields.Int(required=True)
+    msisdn = fields.Int(required=True)
+    network = fields.Str(required=True)
+    imeis = fields.List(fields.List(fields.Str(validate=validate_imei)), required=False)
+    device_count = fields.Int(required=True, error_messages={'required': 'Device count is required'})
 
     @pre_load()
     def file_webpage(self, data):
         """Validates type of input."""
         if 'imeis' not in data and 'file' not in data:
-            raise ValidationError('Either file or webpage input is required',
-                                  field_names=['imeis', 'file']
-                                  )
-        elif 'imeis' in data and 'file' in data:
             raise ValidationError('Either file or webpage input is required',
                                   field_names=['imeis', 'file']
                                   )
@@ -94,37 +93,11 @@ class RegistrationDetailsSchema(Schema):
                                           field_names=['imei_per_device'])
 
     @pre_dump()
-    def get_file_link(self, data):
-        """Returns downloadable links to the files."""
-        if not data.imeis:
-            upload_dir_path = GLOBAL_CONF['upload_directory']
-            data.file_link = '{server_dir}/{local_dir}/{file_name}'.format(
-                                    server_dir=upload_dir_path,
-                                    local_dir=data.tracking_id,
-                                    file_name=data.file
-                                )
-
-    @pre_dump()
     def request_status(self, data):
         """Returns current status of the request."""
         data.status_label = Status.get_status_type(data.status)
         data.processing_status_label = Status.get_status_type(data.processing_status)
         data.report_status_label = Status.get_status_type(data.report_status)
-
-    @pre_dump()
-    def convert_imeis(self, data):
-        """Convert imeis."""
-        if data.imeis:
-            try:
-                data.imeis = ast.literal_eval(data.imeis)
-            except:
-                pass
-
-    @pre_load()
-    def create_device_quota(self, data):
-        """Create a new device quotes for the user."""
-        if 'user_id' in data:
-            DeviceQuota.get_or_create(data['user_id'], 'importer')
 
     @validates('device_count')
     def validate_device_count(self, value):
@@ -135,28 +108,9 @@ class RegistrationDetailsSchema(Schema):
         if value > 10000000:
             raise ValidationError('Device count in single request should be less than 10000000')
 
-    @validates('m_location')
-    def validate_manufacturing_location(self, value):
-        """Validates manufacturing localtions."""
-        locations = ['overseas', 'local']
-        if value not in locations:
-            raise ValidationError('Manufacturing location must be either local or overseas',
-                                  field_names=['m_location'])
-
-    @validates('file')
-    def validate_filename(self, value):
-        """Validates file name."""
-        if not value.endswith('.tsv'):
-            raise ValidationError('Only tsv files are allowed', field_names=['file'])
-        elif len(value) > 100:
-            raise ValidationError('File name length should be under 100 characters', field_names=['file'])
-
-    @validates('user_id')
-    def validate_user_id(self, value):
-        """Validates user id."""
-        validate_input('user id', value)
-
-    @validates('user_name')
-    def validate_user_name(self, value):
-        """Validates user name."""
-        validate_input('user name', value)
+    @validates('network')
+    def validate_network(self, value):
+        """Validates network"""
+        if value.isdigit():
+            raise ValidationError('Network type should be a string',
+                                  field_names=['network'])
