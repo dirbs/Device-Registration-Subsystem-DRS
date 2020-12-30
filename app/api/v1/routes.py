@@ -38,6 +38,8 @@ from app.api.v1.resources.deregdetails import DeRegSectionRoutes
 from app.api.v1.resources.restart_process import RegistrationProcessRestart, DeRegistrationProcessRestart
 from .resources.deassociate import DeassociateImeis
 from .resources.associate import AssociateImeis, AssociateDuplicate
+from app.api.v1.resources.ussd import Register_ussd
+from app.api.v1.resources.test import Send, SendBatchTest
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
 apidoc = ApiDocs(app, 'v1')
@@ -106,6 +108,14 @@ api.add_resource(DeassociateImeis, '/deassociate')
 api.add_resource(AssociateImeis, '/associate', '/associate/<uid>')
 
 api.add_resource(AssociateDuplicate, '/associate_duplicate')
+
+
+# USSD registrations
+api.add_resource(Register_ussd, '/register_ussd')
+
+# test controller for testing purposes
+api.add_resource(Send, '/send')
+api.add_resource(SendBatchTest, '/sendbatch')
 
 
 docs = apidoc.init_doc()
