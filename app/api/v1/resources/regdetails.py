@@ -32,7 +32,7 @@ from app.api.v1.schema.devicedetails import DeviceDetailsSchema
 from app.api.v1.schema.regdetails import RegistrationDetailsSchema
 from app.api.v1.schema.regdetailsupdate import RegistrationDetailsUpdateSchema
 from app.api.v1.schema.regdocuments import RegistrationDocumentsSchema
-from app.api.v1.models.notification import Notification
+from app.api.v1.models.eslog import EsLog, es
 
 
 class RegistrationRoutes(Resource):
@@ -75,32 +75,35 @@ class RegistrationRoutes(Resource):
             schema = RegistrationDetailsSchema()
             file = request.files.get('file')
             validation_errors = schema.validate(args)
+            imei_file = args.get('imeis')
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             if file:
                 file_name = file.filename.split("/")[-1]
-                response = Utilities.store_file(file, tracking_id)
-                if response:
-                    return Response(json.dumps(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                imei_file = Utilities.store_file(file, tracking_id)
+                if imei_file:
+                    return Response(json.dumps(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-                response = Utilities.process_reg_file(file_name, tracking_id, args)
-                if isinstance(response, list):
+                imei_file = Utilities.process_reg_file(file_name, tracking_id, args)
+                if isinstance(imei_file, list):
                     response = RegDetails.create(args, tracking_id)
                 else:
-                    return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                    return Response(app.json_encoder.encode(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
                 Utilities.create_directory(tracking_id)
                 response = RegDetails.create(args, tracking_id)
             db.session.commit()
             response = schema.dump(response, many=False).data
+            log = EsLog.new_request_serialize(response, imei_file, "Registration")
+            EsLog.insert_log(log)
+
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
         except Exception as e:  # pragma: no cover
             db.session.rollback()
-            app.logger.exception(e)
             Utilities.remove_directory(tracking_id)
             app.logger.exception(e)
 
@@ -110,6 +113,16 @@ class RegistrationRoutes(Resource):
 
             return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        except es.ElasticsearchException as e:
+            Utilities.remove_directory(tracking_id)
+            app.logger.exception(e)
+            data = {
+                'message': [_('Registration request failed, check elastic search configuration')]
+            }
+            db.session.rollback()
+            return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
         finally:
             db.session.close()
 
@@ -125,6 +138,8 @@ class RegistrationRoutes(Resource):
         schema = RegistrationDetailsUpdateSchema()
         file = request.files.get('file')
         reg_details = RegDetails.get_by_id(reg_id)
+        imei_file = args.get('imeis')
+
         try:
             tracking_id = reg_details.tracking_id
             if reg_details:
@@ -148,19 +163,23 @@ class RegistrationRoutes(Resource):
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             if file:
                 Utilities.remove_file(reg_details.file, tracking_id)
-                response = Utilities.store_file(file, tracking_id)
-                if response:
-                    return Response(json.dumps(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                imei_file = Utilities.store_file(file, tracking_id)
+                if imei_file:
+                    return Response(json.dumps(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-                response = Utilities.process_reg_file(file.filename, tracking_id, args)
-                if isinstance(response, list):
+                imei_file = Utilities.process_reg_file(file.filename, tracking_id, args)
+                if isinstance(imei_file, list):
                     response = RegDetails.update(args, reg_details, True)
                 else:
-                    return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                    return Response(app.json_encoder.encode(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
                 response = RegDetails.update(args, reg_details, False)
+
             db.session.commit()
+            log = EsLog.new_request_serialize(response, imei_file, "Update Registration", method="Put")
+            EsLog.insert_log(log)
+
             response = schema.dump(response, many=False).data
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))

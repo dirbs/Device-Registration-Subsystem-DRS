@@ -31,6 +31,7 @@ from app.api.v1.models.status import Status
 from app.api.v1.schema.regdocuments import RegistrationDocumentsSchema
 from app.api.v1.schema.regdocumentsupdate import RegistrationDocumentsUpdateSchema
 from app.api.v1.models.notification import Notification
+from app.api.v1.models.eslog import EsLog, es
 
 
 class RegDocumentRoutes(Resource):
@@ -99,7 +100,11 @@ class RegDocumentRoutes(Resource):
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             reg_details.update_status('Pending Review')
             message = schema.dump(created, many=True).data
+
+            log = EsLog.new_doc_serialize(message, request_type="Document Registration", regdetails=reg_details,
+                                          reg_status="Pending Review", method='Post')
             db.session.commit()
+            EsLog.insert_log(log)
             return Response(json.dumps(message), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
@@ -108,6 +113,15 @@ class RegDocumentRoutes(Resource):
 
             data = {
                 'message': _('request document addition failed, check for valid formats.')
+            }
+
+            return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        except es.ElasticsearchException as e:
+            db.session.rollback()
+            app.logger.exception(e)
+            data = {
+                'message': _('request document addition failed')
             }
 
             return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
@@ -153,7 +167,14 @@ class RegDocumentRoutes(Resource):
             else:
                 reg_details.update_status('Pending Review')
             response = schema.dump(updated, many=True).data
+            message = schema.dump(updated, many=True).data
+
+            log = EsLog.new_doc_serialize(message, request_type="Update Registration Documents", regdetails=reg_details,
+                                          reg_status="Pending Review", method='Put')
+
             db.session.commit()
+            EsLog.insert_log(log)
+
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover

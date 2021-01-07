@@ -48,7 +48,7 @@ class RegistrationDetailsSchema(Schema):
     tracking_id = fields.Str()
     report = fields.String()
     duplicate_imeis_file = fields.String(missing='')
-    cnic = fields.String(required=True, error_messages={'required': 'cnic is required'})
+    cnic = fields.String(required=False, error_messages={'required': 'cnic is required'})
 
     @pre_load()
     def file_webpage(self, data):

@@ -29,10 +29,9 @@ from app.api.v1.models.regdevice import RegDevice
 from app.api.v1.models.status import Status
 from app.api.v1.schema.devicedetails import DeviceDetailsSchema
 from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
-
 from app.api.v1.helpers.utilities import Utilities
-
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
+from app.api.v1.models.eslog import EsLog, es
 
 
 class DeviceDetailsRoutes(Resource):
@@ -126,12 +125,15 @@ class DeviceDetailsRoutes(Resource):
             reg_device = RegDevice.create(args)
             reg_device.technologies = DeviceTechnology.create(reg_device.id, args.get('technologies'))
             response = schema.dump(reg_device, many=False).data
+            response["user_id"] = args.get('user_id')
             response['reg_details_id'] = reg_details.id
             device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
             reg_details.update_status(device_status)
             db.session.commit()
             Device.create(reg_details, reg_device.id)
-
+            log = EsLog.new_device_serialize(response, request_type="Device Registration", regdetails=reg_details,
+                                               reg_status=device_status, method='Post')
+            EsLog.insert_log(log)
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
@@ -264,6 +266,14 @@ class DeviceDetailsRoutes(Resource):
                                                                   Status.get_status_id('Pending Review')]
             report_failed = reg_details.report_status == Status.get_status_id('Failed')
             processing_required = processing_failed or report_failed
+
+            response = schema.dump(reg_device, many=False).data
+            response['id'] = reg_device.id
+            device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+
+            log = EsLog.new_device_serialize(response, request_type="Update Device Registration", regdetails=reg_details,
+                                             reg_status=device_status, method='Put')
+            EsLog.insert_log(log)
 
             reg_device = RegDevice.update(reg_device, args)
             response = schema.dump(reg_device, many=False).data

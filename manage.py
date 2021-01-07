@@ -26,6 +26,7 @@ from scripts.db import Seed
 from scripts.listgen import ListGenerator
 from scripts.listgen_ddcds import ListGenerationFull
 from scripts.listgen_ddcds import ListGenerationDelta
+from app.api.v1.models.eslog import EsLog
 
 
 migrate = Migrate(app, db)
@@ -36,6 +37,13 @@ manager.add_command('seed-db', Seed(db))
 manager.add_command('genlist', ListGenerator(db))
 manager.add_command('genlist-ddcds-full', ListGenerationFull)
 manager.add_command('genlist-ddcds-delta', ListGenerationDelta)
+# manager.add_command('log-index', EsLog.create_index)
+
+
+@manager.command
+def LogIndex():
+    """Method to create index for DRS logging operations."""
+    app.logger.info(EsLog.create_index())
 
 
 if __name__ == '__main__':

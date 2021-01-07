@@ -111,6 +111,11 @@ server:
   # value should be either "True" or "False"
   restrict_https: False
 
+#Elastic Search
+ELASTIC_SEARCH:
+  Host : 'localhost'
+  Port : '9200'
+
 # celery configurations
 celery:
 

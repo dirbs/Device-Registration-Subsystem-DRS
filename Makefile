@@ -87,3 +87,6 @@ test:
 lint:
 	pip3 install pylint
 	pylint --verbose app/* scripts/* tests/* manage.py setup.py
+
+create-index:
+	python3 manage.py LogIndex
