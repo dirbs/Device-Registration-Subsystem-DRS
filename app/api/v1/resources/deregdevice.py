@@ -28,6 +28,7 @@ from app.api.v1.models.deregdetails import DeRegDetails
 from app.api.v1.models.deregdevice import DeRegDevice
 from app.api.v1.models.status import Status
 from app.api.v1.schema.deregdevice import DeRegRequestSchema, DeRegDeviceSchema, DeRegRequestUpdateSchema
+from app.api.v1.models.eslog import EsLog, es
 
 
 class DeRegDeviceRoutes(Resource):
@@ -89,9 +90,12 @@ class DeRegDeviceRoutes(Resource):
                 device_id_tac_map = Utilities.get_id_tac_map(created)
                 devices = device_schema.dump(created, many=True)
                 dereg_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
-                dereg.update_status(dereg_status) # TODO: Change status if automate check is enables
+                dereg.update_status(dereg_status)
                 db.session.commit()
                 DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
+                log = EsLog.new_device_serialize(devices.data, 'Device Deregistration Request', regdetails=dereg,
+                                                 imeis=imeis_list, reg_status=dereg_status, method='Post', dereg=True)
+                EsLog.insert_log(log)
                 response = {'devices': devices.data, 'dreg_id': dereg.id}
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -134,19 +138,25 @@ class DeRegDeviceRoutes(Resource):
                                 status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
-                # day_passed = (datetime.now() - dereg.updated_at) > timedelta(1)
                 processing_failed = dereg.processing_status in [Status.get_status_id('Failed'),
                                                                 Status.get_status_id('New Request'),
                                                                 Status.get_status_id('Pending Review')]
                 report_failed = dereg.report_status == Status.get_status_id('Failed')
-                # report_timeout = dereg.report_status == Status.get_status_id('Processing') and day_passed
                 processing_required = processing_failed or report_failed
                 if processing_required:
                     old_devices = list(map(lambda x: x.id, dereg.devices))
                     created = DeRegDevice.bulk_create(args, dereg)
                     device_id_tac_map = Utilities.get_id_tac_map(created)
                     devices = device_schema.dump(created, many=True)
+                    status = Status.get_status_type(dereg.status)
                     db.session.commit()
+
+                    log = EsLog.new_device_serialize(devices.data, 'Update Device Deregistration Request',
+                                                     regdetails=dereg,
+                                                     imeis=imeis_list, method='Put',
+                                                     dereg=True, reg_status=status)
+                    EsLog.insert_log(log)
+
                     DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
                     response = {'devices': devices.data, 'dreg_id': dereg.id}
                 else:

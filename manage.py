@@ -37,11 +37,10 @@ manager.add_command('seed-db', Seed(db))
 manager.add_command('genlist', ListGenerator(db))
 manager.add_command('genlist-ddcds-full', ListGenerationFull)
 manager.add_command('genlist-ddcds-delta', ListGenerationDelta)
-# manager.add_command('log-index', EsLog.create_index)
 
 
 @manager.command
-def LogIndex():
+def logindex():
     """Method to create index for DRS logging operations."""
     app.logger.info(EsLog.create_index())
 

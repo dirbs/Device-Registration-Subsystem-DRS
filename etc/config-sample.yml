@@ -115,7 +115,7 @@ server:
 ELASTIC_SEARCH:
   Host : 'localhost'
   Port : '9200'
-
+  Index: "database name"
 # celery configurations
 celery:
 

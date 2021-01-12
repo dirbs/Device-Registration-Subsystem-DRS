@@ -46,12 +46,38 @@ class EsLog:
         return es.indices.create(index=app.config['es']['Index'], body=mapping, ignore=400)
 
     @staticmethod
-    def new_request_serialize(log_data, imeis, request_type, method=None):
+    def new_request_serialize(log_data, request_type, imeis=None, method=None, dereg=None):
+
         date = datetime.now()
         date = date.strftime("%Y-%m-%d %H:%M:%S")
         es_lang = {"lang": "painless"}
+        description = "New Request created by "
+
+        if dereg:
+            description = "Deregistration request created by "
+            if method is not None and method.lower() == 'put':
+                description = "Deregistration request updated by "
+
+            log = {
+                "script": es_lang,
+                "reg_id": log_data["id"],
+                "tracking_id": log_data["tracking_id"],
+                "user_name": log_data["user_name"],
+                "user_id": log_data["user_id"],
+                "status": log_data['status_label'],
+                "request_type": request_type,
+                "imeis": imeis,
+                "reviewer_id": log_data["reviewer_id"],
+                "reviewer_name": log_data["reviewer_name"],
+                "method": method,
+                "created_at": date,
+                "description": description + log_data['user_name']
+            }
+
+            return log
 
         if method is not None and method.lower() == "put":
+            description = "Request updated by "
             log = {
                 "script": es_lang,
                 "reg_id": log_data.id,
@@ -65,7 +91,7 @@ class EsLog:
                 "reviewer_name": log_data.reviewer_name,
                 "method": method,
                 "updated_at": date,
-                "description": "Request updated by " + log_data.user_name
+                "description": description + log_data.user_name
             }
         else:
             log = {
@@ -81,18 +107,50 @@ class EsLog:
                 "reviewer_name": log_data["reviewer_name"],
                 "method": "Post",
                 "created_at": date,
-                "description": "New Request created by " + log_data['user_name']
+                "description": description + log_data['user_name']
             }
 
         return log
 
     @staticmethod
-    def new_device_serialize(log_data, request_type, regdetails=None, imeis=None, reg_status=None, method=None):
+    def new_device_serialize(log_data, request_type, regdetails=None, imeis=None, reg_status=None, method=None,
+                             dereg=False):
 
         date = datetime.now()
         date = date.strftime("%Y-%m-%d %H:%M:%S")
         es_lang = {"lang": "painless"}
         description = "New Device created by "
+        devices = []
+
+        if dereg:
+            if method is not None and method.lower() == "put":
+                description = "Device data updated by "
+
+            for device in log_data:
+                device_info = {
+                    "device_id": device['id'],
+                    "brand": device['brand_name'],
+                    "model": device['model_name'],
+                    "model_number": device['model_num']
+                }
+                devices.append(device_info)
+
+            log = {
+                "script": es_lang,
+                "device": devices,
+                "reg_id": regdetails.id,
+                "tracking_id": regdetails.tracking_id,
+                "user_name": regdetails.user_name,
+                "user_id": regdetails.user_id,
+                "status": reg_status,
+                "request_type": request_type,
+                "method": method,
+                "created_at": date,
+                "description": description + regdetails.user_name + " for De-Registration request id "
+                                   + str(regdetails.id)
+                }
+
+            return log
 
         if method is not None and method.lower() == "put":
             description = "Device updated by "
@@ -118,16 +176,19 @@ class EsLog:
         return log
 
     @staticmethod
-    def new_doc_serialize(log_data, request_type, regdetails =None, imeis=None, reg_status=None, method=None):
+    def new_doc_serialize(log_data, request_type, regdetails =None, imeis=None, reg_status=None, method=None,
+                          request=None):
+
         date = datetime.now()
         date = date.strftime("%Y-%m-%d %H:%M:%S")
         es_lang = {"lang": "painless"}
         documents = []
-        description = "New Documents created by"
-
+        description = "New Documents created by " + regdetails.user_name \
+                      + " for " + request + " request id " + str(regdetails.id)
 
         if method is not None and method.lower() == "put":
-            description = "Documents updated by "
+            description = "Documents updated by " + regdetails.user_name \
+                          + " for " + request + " request id " + str(regdetails.id)
 
         for doc in log_data:
             doc_info = {
@@ -149,8 +210,7 @@ class EsLog:
             "request_type": request_type,
             "method": method,
             "created_at": date,
-            "description": description + regdetails.user_name + " for Registration request id "
-                           + str(regdetails.id)
+            "description": description
         }
 
         return log

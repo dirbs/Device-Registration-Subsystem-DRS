@@ -102,7 +102,7 @@ class RegDocumentRoutes(Resource):
             message = schema.dump(created, many=True).data
 
             log = EsLog.new_doc_serialize(message, request_type="Document Registration", regdetails=reg_details,
-                                          reg_status="Pending Review", method='Post')
+                                          reg_status="Pending Review", method='Post', request='Registration')
             db.session.commit()
             EsLog.insert_log(log)
             return Response(json.dumps(message), status=CODES.get("OK"),
@@ -170,7 +170,7 @@ class RegDocumentRoutes(Resource):
             message = schema.dump(updated, many=True).data
 
             log = EsLog.new_doc_serialize(message, request_type="Update Registration Documents", regdetails=reg_details,
-                                          reg_status="Pending Review", method='Put')
+                                          reg_status="Pending Review", method='Put', request='Registration')
 
             db.session.commit()
             EsLog.insert_log(log)

@@ -96,7 +96,7 @@ class RegistrationRoutes(Resource):
                 response = RegDetails.create(args, tracking_id)
             db.session.commit()
             response = schema.dump(response, many=False).data
-            log = EsLog.new_request_serialize(response, imei_file, "Registration")
+            log = EsLog.new_request_serialize(response, "Registration", imeis=imei_file)
             EsLog.insert_log(log)
 
             return Response(json.dumps(response), status=CODES.get("OK"),
@@ -177,7 +177,7 @@ class RegistrationRoutes(Resource):
                 response = RegDetails.update(args, reg_details, False)
 
             db.session.commit()
-            log = EsLog.new_request_serialize(response, imei_file, "Update Registration", method="Put")
+            log = EsLog.new_request_serialize(response, "Update Registration", imeis=imei_file, method="Put")
             EsLog.insert_log(log)
 
             response = schema.dump(response, many=False).data
