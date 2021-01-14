@@ -53,13 +53,13 @@ class RegistrationDetailsSchema(Schema):
     imeis = fields.List(fields.List(fields.Str(validate=validate_imei)), required=False)
     device_count = fields.Int(required=True, error_messages={'required': 'Device count is required'})
 
-    @pre_load()
-    def file_webpage(self, data):
-        """Validates type of input."""
-        if 'imeis' not in data and 'file' not in data:
-            raise ValidationError('Either file or webpage input is required',
-                                  field_names=['imeis', 'file']
-                                  )
+    # @pre_load()
+    # def file_webpage(self, data):
+    #     """Validates type of input."""
+    #     if 'imeis' not in data and 'file' not in data:
+    #         raise ValidationError('Either file or webpage input is required',
+    #                               field_names=['imeis', 'file']
+    #                               )
 
     @pre_load()
     def convert_imei(self, data):
@@ -114,3 +114,36 @@ class RegistrationDetailsSchema(Schema):
         if value.isdigit():
             raise ValidationError('Network type should be a string',
                                   field_names=['network'])
+
+class UssdTrackingSchema(Schema):
+    """Schema for USSD Tracking."""
+    msisdn = fields.Int(required=True)
+    network = fields.Str(required=True)
+    device_id = fields.Int(required=True)
+
+    @pre_dump()
+    def request_status(self, data):
+        """Returns current status of the request."""
+        data.status_label = Status.get_status_type(data.status)
+        data.processing_status_label = Status.get_status_type(data.processing_status)
+        data.report_status_label = Status.get_status_type(data.report_status)
+
+    @validates('network')
+    def validate_network(self, value):
+        """Validates network"""
+        if value.isdigit():
+            raise ValidationError('Network type should be a string',
+                                  field_names=['network'])
+
+class UssdDeleteSchema(Schema):
+    """Schema for USSD Tracking."""
+    msisdn = fields.Int(required=True)
+    network = fields.Str(required=True)
+    device_id = fields.Int(required=True)
+    close_request = fields.Str(required=True)
+
+
+class UssdCountSchema(Schema):
+    """Schema for USSD Tracking."""
+    msisdn = fields.Int(required=True)
+    network = fields.Str(required=True)

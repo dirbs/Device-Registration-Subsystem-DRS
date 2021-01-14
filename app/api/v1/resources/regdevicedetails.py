@@ -160,7 +160,13 @@ class DeviceDetailsRoutes(Resource):
                 str_repr = "['" + str_repr + "']"
                 imeis.append(ast.literal_eval(str_repr.replace(' ', '')))
 
-            multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
+            # multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
+            #                                                          app.config['API_VERSION'],
+            #                                                          imeis)
+
+            # http://192.168.100.81/api/v2/tac/3564680
+            # print('priting the url: http://192.168.100.81/'+app.config['API_VERSION']+str(imeis))
+            multi_sim_result = MultiSimCheck.validate_imeis_capacity('http://192.168.100.72:5000/',
                                                                      app.config['API_VERSION'],
                                                                      imeis)
 

@@ -88,7 +88,7 @@ class SendBatchTest(MethodResource):
         }
         messages_list.append(messages.copy())
 
-        jasmin_send_response = Jasmin.send_batch(messages_list)
+        jasmin_send_response = Jasmin.send_batch(messages_list, network='ufone')
         print(jasmin_send_response)
         return Response(json.dumps(
             VersionSchema().dump(dict(

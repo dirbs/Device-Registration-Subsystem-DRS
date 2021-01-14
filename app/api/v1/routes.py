@@ -39,6 +39,9 @@ from app.api.v1.resources.restart_process import RegistrationProcessRestart, DeR
 from .resources.deassociate import DeassociateImeis
 from .resources.associate import AssociateImeis, AssociateDuplicate
 from app.api.v1.resources.ussd import Register_ussd
+from app.api.v1.resources.ussd import Track_record_ussd
+from app.api.v1.resources.ussd import Delete_record_ussd
+from app.api.v1.resources.ussd import Ussd_records_count
 from app.api.v1.resources.test import Send, SendBatchTest
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
@@ -112,6 +115,15 @@ api.add_resource(AssociateDuplicate, '/associate_duplicate')
 
 # USSD registrations
 api.add_resource(Register_ussd, '/register_ussd')
+
+# Track records using USSD
+api.add_resource(Track_record_ussd, '/track_record_ussd')
+
+# Deleting record using USSD
+api.add_resource(Delete_record_ussd, '/delete_record_ussd')
+
+# Count registered applications USSD
+api.add_resource(Ussd_records_count, '/ussd_records_count')
 
 # test controller for testing purposes
 api.add_resource(Send, '/send')

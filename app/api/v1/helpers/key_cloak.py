@@ -70,8 +70,13 @@ class Key_cloak:
 
                     # get the newly created user id
                     created_user_info = Key_cloak.check_user(args, admin_token_data)
-                    user_id = {"id": created_user_info['id']}
 
+                    # user created, set the user id for API calls
+                    user_id = {"id": created_user_info['id']}
+                    args.update(user_id)
+
+                    # user created, set the user_id for DB insertion later on
+                    user_id = {"user_id": created_user_info['id']}
                     args.update(user_id)
 
                     # assign password to newly created user
@@ -82,6 +87,8 @@ class Key_cloak:
                     if group_response_args == False:
                         return False
                     else:
+                        print("Printing the created user with password and group dict")
+                        print(password_response_args)
                         return password_response_args
 
                 else:
@@ -116,6 +123,7 @@ class Key_cloak:
 
             else:
                 # return the user
+                user_info_object[0]["user_id"] = user_info_object[0]["id"]
                 return user_info_object[0]
         else:
             app.logger.info("Check user API failed due to status other than 200")
