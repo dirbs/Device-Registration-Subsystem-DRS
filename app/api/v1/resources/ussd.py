@@ -240,8 +240,8 @@ class Register_ussd(MethodResource):
                         # print(status_msg)
                         # print(reg_details.status)
 
-                        if reg_details.status == 6:
-                            status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
+                        # if reg_details.status == 6:
+                        status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
 
                         # send user a details about device
                         messages = {
