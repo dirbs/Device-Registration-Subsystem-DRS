@@ -240,8 +240,8 @@ class Register_ussd(MethodResource):
                         # print(status_msg)
                         # print(reg_details.status)
 
-                        # if reg_details.status == 6:
-                        status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
+                        if reg_details.status == 6:
+                            status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
 
                         # send user a details about device
                         messages = {
@@ -267,7 +267,7 @@ class Register_ussd(MethodResource):
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                         print("Jasmin API response: " + str(jasmin_send_response.status_code))
                         print("Printing the message array.")
-                        print(messages)
+                        print(self.messages_list)
                         response = {
                             'message': 'Device registration has been processed successfully.'
                         }
