@@ -266,6 +266,8 @@ class Register_ussd(MethodResource):
 
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                         print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                        print("Printing the message array.")
+                        print(messages)
                         response = {
                             'message': 'Device registration has been processed successfully.'
                         }
