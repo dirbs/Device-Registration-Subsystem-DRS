@@ -16,34 +16,45 @@ from elasticsearch import Elasticsearch
 from app import app
 from datetime import datetime
 from app.api.v1.models.status import Status
+import sys
+
+from flask_script import Command
 
 
 es = Elasticsearch([{'host': app.config['es']['Host'],
                    'port': app.config['es']['Port']}])
 
 
-class EsLog:
+class EsIndex(Command):
 
-    @staticmethod
-    def create_index():
-        """Method to create index for DRS logging operations."""
+    def __init__(self):
+        super().__init__()
+        self.es = es
+
+    def __create_es_index(self):
         mapping = '''{
-            "mappings": {
-            "numeric_detection": false,
-            "properties": {
-              "updated_at": {
-                "type": "date",
-                "format": "yyyy-MM-dd HH:mm:ss" 
-              },
-              "created_at": {
-                "type": "date",
-                "format": "yyyy-MM-dd HH:mm:ss" 
-              }
-            }
-            }
-            }'''
-        es.indices.delete(index=app.config['es']['Index'], ignore=[400, 404])
-        return es.indices.create(index=app.config['es']['Index'], body=mapping, ignore=400)
+                    "mappings": {
+                    "numeric_detection": false,
+                    "properties": {
+                      "updated_at": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss" 
+                      },
+                      "created_at": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss" 
+                      }
+                    }
+                    }
+                    }'''
+        self.es.indices.delete(index=app.config['es']['Index'], ignore=[400, 404])
+        print(es.indices.create(index=app.config['es']['Index'], body=mapping, ignore=400))
+
+    def run(self):
+        self.__create_es_index()
+
+
+class EsLog:
 
     @staticmethod
     def new_request_serialize(log_data, request_type, imeis=None, method=None, dereg=None):
@@ -137,7 +148,7 @@ class EsLog:
 
             log = {
                 "script": es_lang,
-                "device": devices,
+                "devices": devices,
                 "reg_id": regdetails.id,
                 "tracking_id": regdetails.tracking_id,
                 "user_name": regdetails.user_name,
@@ -155,18 +166,22 @@ class EsLog:
         if method is not None and method.lower() == "put":
             description = "Device updated by "
 
+        device_info = {
+            "device_id": log_data['id'],
+            "brand": log_data['brand'],
+            "model": log_data['model_name'],
+            "model_number": log_data['model_num']
+        }
+
         log = {
             "script": es_lang,
-            "device_id": log_data["id"],
+            "devices": device_info,
             "reg_id": regdetails.id,
             "tracking_id": regdetails.tracking_id,
             "user_name": regdetails.user_name,
             "user_id": regdetails.user_id,
             "status": reg_status,
             "request_type": request_type,
-            "brand": log_data['brand'],
-            "model": log_data["model_name"],
-            "model_number": log_data["model_num"],
             "method": method,
             "created_at": date,
             "description": description + regdetails.user_name + " for Registration request id "
@@ -220,41 +235,40 @@ class EsLog:
         return es.index(index=app.config['es']['Index'], doc_type="_doc", body=log)
 
     @staticmethod
-    def get_doc(tracking_id):
-        res = es.get(index=app.config['system_config']['Database']['Database'], id=tracking_id)
-        return res
+    def reviewer_serialize(reviewer, method=None, review_type = None, request_details=None, section=None, status=None,
+                           description=None):
 
-    @staticmethod
-    def update_doc(tracking_id, doc_to_update):
-        es.update(index=app.config['system_config']['Database']['Database'], id=tracking_id, body=doc_to_update)
-        return None
+        date = datetime.now()
+        date = date.strftime("%Y-%m-%d %H:%M:%S")
+        es_lang = {"lang": "painless"}
 
-    @staticmethod
-    def search_doc(doc_to_search, limit, start):
-        query = {"size": 10000, "query": {"bool": {"must": []}}}
-        import json
-        search = json.loads(doc_to_search)
-        print(es.search(index="drs", body={"query":{"match":{"reg_id":"333"}}}))
-        exit()
-        # print(search['search_args'])
+        reviewer_data = {
+            'reviewer_name': reviewer.get('reviewer_name'),
+            'reviewer_id': reviewer.get('reviewer_id'),
+            'request_type': reviewer.get('request_type'),
+            'reg_id': reviewer.get('request_id')
+        }
+
+        if 'section' in reviewer:
+            reviewer_data['section'] = reviewer.get('section')
+            reviewer_data['section_status'] = reviewer.get('section_status')
+            reviewer_data['comment'] = reviewer.get('comment')
+
+        # print(reviewer_data)
+        # print(if 'section' in reviewer)
         # exit()
-        for field in search['search_args']:
-            if field == "updated_at":
-                date = doc_to_search.get(field).split(",")
-                query['query']['bool']['must'].append({"range": {field: {"gte": date[0] + " 00:00:00",
-                                                                         "lte": date[1] + " 23:59:59"}}})
-            elif field == "imeis":
-                query['query']['bool']['must'].append({"terms": {"device_details."+field: doc_to_search[field]}})
-            else:
-                if field in ["actions", "txt", "reg_id", "user_id", "username",
-                             "email"]:
-                    query['query']['bool']['must'].append({"match": {"drs."+field: doc_to_search[field]}})
-                else:
-                    # query['query']['bool']['must'].append({"match": {field: doc_to_search[field]}})
-                    print(field)
-                    print(type(field))
-                    exit()
-                    print(query['query']['bool']['must'].append({"match": {field: doc_to_search[field]}}))
-                    exit()
-        resp = es.search(index=app.config['es']['Index'], body=query)
-        return resp
+
+        log = {
+            "script": es_lang,
+            "reviewer_info": reviewer_data,
+            "reg_id": request_details.id,
+            "tracking_id": request_details.tracking_id,
+            "user_name": request_details.user_name,
+            "user_id": request_details.user_id,
+            "status": status,
+            "request_type": review_type,
+            "method": method,
+            "created_at": date,
+            "description": description
+        }
+        return log

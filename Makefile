@@ -89,4 +89,4 @@ lint:
 	pylint --verbose app/* scripts/* tests/* manage.py setup.py
 
 create-index:
-	python3 manage.py logindex
+	python3 manage.py create-index
