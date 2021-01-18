@@ -13,14 +13,9 @@ class Ussd_helper:
         data.update({'import_type': "USSD"})
         data.update({'imeis': arguments['imeis']})
         data.update({'m_location': "local"})
-        # data.update({'processing_status': "ask yasir"})
-        # data.update({'report_status': "ask yasir"})
-        # data.update({'summary': "ask yasir"})
-        # data.update({'report': "ask yasir"})
         data.update({'status': 1})
 
         if 'password' in user_data:
-            # print("this is new user")
             # data.update({'user_id': user_data['user_id']})
             data.update({'username': user_data['cnic']})
             data.update({'password': user_data['password']})
@@ -94,10 +89,10 @@ class Ussd_helper:
     @staticmethod
     def return_operator_token(network):
         return {
+            # simply encrypted the network name string with base64
             'zong': 'em9uZzoxMjM=',
             'ufone': 'dWZvbmU6MTIz',
             'telenor': 'dGVsZW5vcjoxMjM=',
             'jazz': 'amF6ejoxMjM='
-
         }.get(network, 'Zm9vOmJhcg==')
 

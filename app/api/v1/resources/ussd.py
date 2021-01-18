@@ -74,7 +74,7 @@ class Register_ussd(MethodResource):
         """POST method handler, creates registration requests."""
         tracking_id = uuid.uuid4()
         try:
-            print("\n" * 20)
+
             # get the posted data
             args = RegDetails.curate_args(request)
 
@@ -124,7 +124,7 @@ class Register_ussd(MethodResource):
                             'content': val2
                         }
                         self.messages_list.append(messages.copy())
-                # print(self.messages_list)
+
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                 print("Jasmin API response: " + str(jasmin_send_response.status_code))
 
@@ -167,7 +167,7 @@ class Register_ussd(MethodResource):
                 if reg_response.id:
                     # get the tac from an imei in the dict and search for GSMA record
                     tac = arguments['imeis'][0][0][0:8]
-                    gsma_url = 'http://192.168.100.72:5000/api/v2/tac/'+str(tac)
+                    gsma_url = str(app.config['CORE_BASE_URL']+app.config['API_VERSION'])+str('/tac/'+tac)
 
                     # get GSMA record against each TAC and match them with IMEIs count given in list
                     gsma_response = requests.get(gsma_url).json()
@@ -199,21 +199,12 @@ class Register_ussd(MethodResource):
                         else:
                             device_arguments.update({'reg_details_id': ''})
 
-                        # print("\n" * 5)
-                        # print("printing the device arguments")
-                        # print(device_arguments)
-
                         device_arguments.update({'device_type': 'Smartphone'})
 
                         reg_device = RegDevice.create(device_arguments)
-                        # print("\n" * 5)
-                        # print("printing the reg-device")
-                        # print(reg_device)
+
                         reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
-                        # print("\n" * 5)
-                        # print("printing the technologies")
-                        # print(reg_device)
-                        # print(reg_device.status)
+
                         device_status = 'Approved' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
                         reg_details.update_status(device_status)
 
@@ -225,20 +216,8 @@ class Register_ussd(MethodResource):
 
                         # get the device details
                         reg_details = RegDetails.get_by_id(reg_response.id)
-                        # print("\n" * 5)
-                        # print("printing the reg details for the second time")
-                        # print(reg_details)
-                        #
 
                         status_msg = Ussd_helper.set_message_for_user_info(reg_details.status)
-                        # print("Printing the status_msg")
-                        # print(status_msg)
-                        # print(type(status_msg))
-                        # print(reg_details.status)
-
-                        # print("Printing the status id")
-                        # print(status_msg)
-                        # print(reg_details.status)
 
                         if reg_details.status == 6:
                             status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
@@ -261,12 +240,10 @@ class Register_ussd(MethodResource):
                                            arguments['password']
                             }
                             self.messages_list.append(messages.copy())
-                        # response = []
-                        # response = schema.dump(response, many=False).data
 
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                         print("Jasmin API response: " + str(jasmin_send_response.status_code))
-                        print("Printing the message array.")
+                        print("Printing the message array in CLI mode.")
                         print(self.messages_list)
                         response = {
                             'message': 'Device registration has been processed successfully.'
@@ -294,7 +271,6 @@ class Register_ussd(MethodResource):
         except Exception as e:  # pragma: no cover
             db.session.rollback()
             app.logger.exception(e)
-            # Utilities.remove_directory(tracking_id)
             data = {
                 'message': [_('Registration request failed, check upload path or database connection')]
             }
@@ -356,7 +332,6 @@ class Track_record_ussd(MethodResource):
                     device_info = UssdModel.get_by_id(args['device_id'])
 
                     if device_info.msisdn != args['msisdn']:
-                        # print("Not msisdn")
                         messages = {
                             'from': 'DRS-USSD',
                             'to': args['msisdn'],
@@ -372,16 +347,15 @@ class Track_record_ussd(MethodResource):
                                         status=CODES.get("RECORD_MISMATCH"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
-                        # print("MSISDN exists")
                         msg_string = Ussd_helper.set_record_info(device_info)
                         print(msg_string)
 
-                    messages = {
-                        'from': 'DRS-USSD',
-                        'to': args['msisdn'],
-                        'content': str(msg_string)
-                    }
-                    self.messages_list.append(messages.copy())
+                        messages = {
+                            'from': 'DRS-USSD',
+                            'to': args['msisdn'],
+                            'content': str(msg_string)
+                        }
+                        self.messages_list.append(messages.copy())
 
                     jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                     print("printing the jasmin send response code in track")
@@ -412,7 +386,6 @@ class Track_record_ussd(MethodResource):
         except Exception as e:  # pragma: no cover
             db.session.rollback()
             app.logger.exception(e)
-            # Utilities.remove_directory(tracking_id)
             data = {
                 'message': [_('Something went wrong. Please try again later.')]
             }
@@ -466,7 +439,6 @@ class Delete_record_ussd(MethodResource):
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
-                print("we are in the else part with no exception")
 
                 dereg_id = args['device_id']
 
@@ -543,8 +515,7 @@ class Delete_record_ussd(MethodResource):
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
                 response = DeRegDetails.update(args, dreg_details, file=False)
-                # print("Printing the response")
-                # print(response)
+
                 response = schema.dump(response, many=False).data
 
                 # let the user know about the deregistration
@@ -554,10 +525,6 @@ class Delete_record_ussd(MethodResource):
                     'content': response if response else 'Response request failed.'
                 }
                 self.messages_list.append(messages.copy())
-
-                # print("Printing the response")
-                # print(messages)
-
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
                 print("Jasmin API response: " + str(jasmin_send_response.status_code))
@@ -571,7 +538,6 @@ class Delete_record_ussd(MethodResource):
             data = {
                 'message': [_('Registration request failed, check upload path or database connection')]
             }
-
             return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
         finally:
@@ -592,9 +558,7 @@ class Ussd_records_count(MethodResource):
             )).data))
 
     def post(self):
-        """PUT method handler,
-        updates existing de registration request.
-        """
+        """POST method handler, Get all user's registered devices and statuses"""
         try:
 
             # get the posted data
@@ -621,8 +585,6 @@ class Ussd_records_count(MethodResource):
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
-                ######################### Starts Here ###################################
-
                 total_count = RegDetails.get_count(msisdn=args['msisdn'])
 
                 if total_count['count_with_msisdn'] > 0:
@@ -658,7 +620,7 @@ class Ussd_records_count(MethodResource):
                                 status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             db.session.rollback()
             app.logger.exception(e)
 
@@ -671,97 +633,3 @@ class Ussd_records_count(MethodResource):
         finally:
             db.session.close()
 
-
-
-
-'''
-                dereg_id = args['device_id']
-
-                if dereg_id and dereg_id.isdigit() and DeRegDetails.exists(dereg_id):
-
-                    # if record matches with the passed MSISDN
-                    device_info = UssdModel.get_by_id(dereg_id)
-
-                    if device_info.msisdn != args['msisdn']:
-                        messages = {
-                            'from': 'DRS-USSD',
-                            'to': args['msisdn'],
-                            'content': "Your MSISDN does not match with the record."
-                        }
-                        self.messages_list.append(messages.copy())
-
-                        jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
-
-                        data = {'message': [_("Your MSISDN does not match with the record.")]}
-                        return Response(app.json_encoder.encode(data),
-                                        status=CODES.get("RECORD_MISMATCH"),
-                                        mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-                    else:
-                        dreg_details = DeRegDetails.get_by_id(dereg_id)
-                else:
-
-                    messages = {
-                        'from': 'DRS-USSD',
-                        'to': args['msisdn'],
-                        'content': 'Delete Request not found.'
-                    }
-                    self.messages_list.append(messages.copy())
-
-                    jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                    print("Printing the jasmin send response")
-                    print(jasmin_send_response)
-
-                    print(jasmin_send_response)
-                    if jasmin_send_response:
-                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
-                    else:
-                        print("Jasmin API response: " + str(jasmin_send_response))
-                    return Response(app.json_encoder.encode({'message': [_('Delete Request not found.')]}),
-                                    status=CODES.get("UNPROCESSABLE_ENTITY"),
-                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-
-                if dreg_details:
-                    args.update({'status': dreg_details.status, 'processing_status': dreg_details.processing_status,
-                                 'report_status': dreg_details.report_status})
-                validation_errors = schema.validate(args)
-                if validation_errors:
-                    for key, value in validation_errors.items():
-                        messages = {
-                            'from': 'DRS-USSD',
-                            'to': args['msisdn'],
-                            'content': key + ':' + value[0]
-                        }
-                        self.messages_list.append(messages.copy())
-
-                    jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                    print("Jasmin API response: " + str(jasmin_send_response.status_code))
-                    return Response(app.json_encoder.encode(validation_errors),
-                                    status=CODES.get("UNPROCESSABLE_ENTITY"),
-                                    mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-                if args.get('close_request', None) == 'True':
-                    response = DeRegDetails.close(dreg_details)
-                    if isinstance(response, dict):
-                        return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
-                                        mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-                    else:
-                        response = schema.dump(response, many=False).data
-                        return Response(json.dumps(response), status=CODES.get("OK"),
-                                        mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-
-                response = DeRegDetails.update(args, dreg_details, file=False)
-
-                response = schema.dump(response, many=False).data
-
-                # let the user know about the deregistration
-                messages = {
-                    'from': 'DRS-USSD',
-                    'to': args['msisdn'],
-                    'content': response if response else 'Response request failed.'
-                }
-                self.messages_list.append(messages.copy())
-
-                jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                print("Jasmin API response: " + str(jasmin_send_response.status_code))
-                return Response(json.dumps(response), status=CODES.get("OK"),
-                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))'''

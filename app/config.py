@@ -101,5 +101,27 @@ class ConfigApp:
         self.app.config['CeleryTasks'] = celery_config['CeleryTasks']
         self.app.config['conditions'] = conditions
         self.app.config['broker_pool_limit'] = None
+
+        self.app.config['KEYCLOAK_URL'] = self.config.get('keycloak_server')['url']
+        self.app.config['KEYCLOAK_PORT'] = self.config.get('keycloak_server')['port']
+        self.app.config['KEYCLOAK_TOKEN'] = self.config.get('keycloak_server')['token']
+        self.app.config['KEYCLOAK_SEARCH'] = self.config.get('keycloak_server')['search']
+        self.app.config['KEYCLOAK_USERS'] = self.config.get('keycloak_server')['users']
+        self.app.config['KEYCLOAK_RESET_PASSWORD'] = self.config.get('keycloak_server')['reset_password']
+        self.app.config['KEYCLOAK_GROUP_ID'] = self.config.get('keycloak_server')['group_id']
+
+        self.app.config['JASMIN_URL'] = self.config.get('jasmin_server')['url']
+        self.app.config['JASMIN_PORT'] = self.config.get('jasmin_server')['port']
+        self.app.config['JASMIN_INDIVIDUAL_SEND'] = self.config.get('jasmin_server')['individual_send']
+        self.app.config['JASMIN_BATCH_SEND'] = self.config.get('jasmin_server')['batch_send']
+
+
+# jasmin_server:
+# url: 'http://192.168.100.42'
+# port: ':8080'
+# individual_send: '/secure/send'
+# batch_send: '/secure/sendbatch'
+        self.app.config['USSD_PASSWORD_STRENGTH'] = self.config.get('ussd_password_strength')
+
         # app.config['MAX_CONTENT_LENGTH'] = 28 * 3 * 1024 * 1024
         return self.app

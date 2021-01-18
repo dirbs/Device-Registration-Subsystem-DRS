@@ -13,15 +13,10 @@ Redistribution and use in source and binary forms, with or without modification,
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-import os
-from app import session, celery, app
+from app import session
 from requests import ConnectionError
 from app.api.v1.helpers.error_handlers import *
-from app.api.v1.helpers.multisimcheck import MultiSimCheck
 import random, string
-
-from threading import Thread
-from math import ceil
 
 import json
 
@@ -29,7 +24,7 @@ class Key_cloak:
     @staticmethod
     def get_admin_token():
         try:
-            url = 'http://192.168.100.216:8080/auth/realms/master/protocol/openid-connect/token'
+            url = str(app.config['KEYCLOAK_URL']+app.config['KEYCLOAK_PORT']+app.config['KEYCLOAK_TOKEN'])
 
             # batch dict for token
             req_data = {
@@ -41,7 +36,6 @@ class Key_cloak:
 
             headers = {'content-type': 'application/x-www-form-urlencoded'}
 
-            # app.logger.info('http://192.168.100.216:8080/auth/realms/DIRBS/protocol/openid-connect/token')
             admin_token_response = session.post(
                 url=url,
                 data=req_data,
@@ -53,7 +47,6 @@ class Key_cloak:
             else:
                 return app.logger.info("Get Admin Token failed due to status other than 200")
         except (ConnectionError, Exception) as e:
-            # print("exception executed in get_admin_token API call")
             app.logger.exception(e)
 
     @staticmethod
@@ -106,8 +99,7 @@ class Key_cloak:
     @staticmethod
     def check_user(args, admin_token_data):
 
-        url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users?briefRepresentation=true&search=' + args['cnic']
-        # url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users?briefRepresentation=true&search=ikram'
+        url = str(app.config['KEYCLOAK_URL']+app.config['KEYCLOAK_PORT']+app.config['KEYCLOAK_SEARCH']) + args['cnic']
 
         headers = {'Authorization': 'bearer ' + admin_token_data['access_token']}
 
@@ -132,7 +124,7 @@ class Key_cloak:
     @staticmethod
     def create_user(args, admin_token_data):
         try:
-            url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users'
+            url = str(app.config['KEYCLOAK_URL'] + app.config['KEYCLOAK_PORT'] + app.config['KEYCLOAK_USERS'])
 
             headers = {
                 'Content-Type': 'application/json',
@@ -171,7 +163,10 @@ class Key_cloak:
         pass_dict = {"password": password}
         args.update(pass_dict)
 
-        url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users/'+args['id']+'/reset-password'
+        url = str(app.config['KEYCLOAK_URL'] + app.config['KEYCLOAK_PORT'] + app.config['KEYCLOAK_USERS'] + '/'
+                  +args['id']+app.config['KEYCLOAK_RESET_PASSWORD'])
+
+
 
         headers = {
             'Content-Type': 'application/json',
@@ -200,8 +195,8 @@ class Key_cloak:
     @staticmethod
     def assign_group(password_response_args, admin_token_data):
 
-        # url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users/' + password_response_args['id'] + '/reset-password'
-        url = 'http://192.168.100.216:8080/auth/admin/realms/DIRBS/users/' + password_response_args['id'] + '/groups/8d3bdaff-15c4-4097-8fb2-121d2b7ad76d'
+        url = str(app.config['KEYCLOAK_URL'] + app.config['KEYCLOAK_PORT'] + app.config['KEYCLOAK_USERS'] + '/'
+                  + password_response_args['id'] +'/groups/'+ app.config['KEYCLOAK_GROUP_ID'])
 
         headers = {
             'Content-Type': 'application/json',
@@ -213,7 +208,7 @@ class Key_cloak:
         group_dict = {
             "realm": 'DIRBS',
             "userId": password_response_args['id'],
-            "groupId": "8d3bdaff-15c4-4097-8fb2-121d2b7ad76d"
+            "groupId": str(app.config['KEYCLOAK_GROUP_ID'])
         }
 
         updated_user_info = session.put(
@@ -232,10 +227,10 @@ class Key_cloak:
 
         password_length = int(pass_length)
 
-        # in case we add special chars as well
-        # password_characters = string.ascii_letters + string.digits + string.punctuation
-
-        password_characters = string.ascii_letters + string.digits
+        if app.config['USSD_PASSWORD_STRENGTH']:
+            password_characters = string.ascii_letters + string.digits + string.punctuation
+        else:
+            password_characters = string.ascii_letters + string.digits
         password = []
         for x in range(password_length):
             password.append(random.choice(password_characters))

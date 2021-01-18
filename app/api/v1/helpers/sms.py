@@ -13,43 +13,39 @@ Redistribution and use in source and binary forms, with or without modification,
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-from app import session, celery, app
+from app import session
 from requests import ConnectionError
 from app.api.v1.helpers.error_handlers import *
 from app.api.v1.helpers.ussd_helper import Ussd_helper
-from app.api.v1.helpers.multisimcheck import MultiSimCheck
 
-from threading import Thread
-from math import ceil
 import json
-
 
 class Jasmin:
     @staticmethod
     def send(sender, network, message):
         try:
-            url = 'http://192.168.100.42:8080/secure/send'
+            url = str(app.config['JASMIN_URL'] + app.config['JASMIN_PORT']+app.config['JASMIN_INDIVIDUAL_SEND'])
 
             # message body
             sms_body = {
                 "to": sender,
-                "from": "Ikram",
+                "from": "DIRBS-DRS",
                 "coding": 8,
                 "content": message
             }
 
-            headers = {'content-type': 'application/json', 'Authorization': 'Basic Zm9vOmJhcg=='}
+            # get operator authorization token
+            network = Ussd_helper.return_operator_token(network)
 
-            # app.logger.info('http://192.168.100.41:8080/secure/send')
+            headers = {'content-type': 'application/json', 'Authorization': 'Basic '+str(network)}
+
+            app.logger.info(url)
             jasmin_send_response = session.post(
                 url=url,
                 data=json.dumps(sms_body),
                 headers=headers)
 
-            # print(jasmin_send_response)
-            # print(jasmin_send_response.json())
             if jasmin_send_response.status_code == 200:
-                # admin_response_json = jasmin_send_response.json()
                 return jasmin_send_response
             else:
                 print(jasmin_send_response)
@@ -62,44 +58,15 @@ class Jasmin:
     @staticmethod
     def send_batch(messages_list, network):
         try:
-            url = 'http://192.168.100.42:8080/secure/sendbatch'
+            url = str(app.config['JASMIN_URL'] + app.config['JASMIN_PORT']+app.config['JASMIN_BATCH_SEND'])
 
             # get operator authorization token
             network = Ussd_helper.return_operator_token(network)
-            # print("The network code is: "+network)
-
-            # Batch messages body
-
-            # sms_body = {
-            #     "messages": [
-            #         {
-            #           "from": "Test Batch 1",
-            #           "to": [
-            #             "sender"
-            #           ],
-            #           "content": "Message 1 goes to 2 numbers message"
-            #         },
-            #         {
-            #           "from": "Test Batch 2",
-            #           "to": [
-            #             "sender"
-            #           ],
-            #           "content": "Message 2 goes to 2 numbers message"
-            #         },
-            #         {
-            #           "from": "Test Batch 3",
-            #           "to": "sender",
-            #           "content": "Message 3 goes to 1 number message"
-            #         }
-            #     ]
-            # }
 
             sms_body = {"messages": messages_list}
 
             headers = {'content-type': 'application/json', 'Authorization': 'Basic ' + str(network)}
             # headers = {'content-type': 'application/json', 'Authorization': 'Basic Zm9vOmJhcg=='}
-
-            # print(headers)
 
             jasmin_send_response = session.post(
                 url=url,
@@ -108,7 +75,6 @@ class Jasmin:
 
             if jasmin_send_response:
                 if jasmin_send_response.status_code == 200:
-                    # admin_response_json = jasmin_send_response.json()
                     return jasmin_send_response
                 else:
                     app.logger.info(jasmin_send_response)
