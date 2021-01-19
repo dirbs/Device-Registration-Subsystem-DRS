@@ -112,7 +112,7 @@ server:
   restrict_https: False
 
 #Elastic Search
-ELASTIC_SEARCH:
+elastic_server:
   Host : 'localhost'
   Port : '9200'
   Index: "database name"
