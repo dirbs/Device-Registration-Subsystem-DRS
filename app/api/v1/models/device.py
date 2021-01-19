@@ -147,6 +147,8 @@ class Device(db.Model):
     def auto_approve(task_id, reg_details, flatten_imeis, app):
         from app.api.v1.resources.reviewer import SubmitReview
         from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        from app.api.v1.models.eslog import EsLog
+        from app.api.v1.models.status import Status
         import json
         sr = SubmitReview()
         try:
@@ -214,6 +216,10 @@ class Device(db.Model):
                     reg_details.save()
                     db.session.commit()
 
+                    # create log
+                    log = EsLog.auto_review(reg_details, "Registration Request", 'Post', Status.get_status_type(status))
+                    app.logger(EsLog.insert_log(log))
+
         except Exception:  # pragma: no cover
             db.session.rollback()
             reg_details.update_processing_status('Failed')
@@ -223,6 +229,10 @@ class Device(db.Model):
                                                     request_type='registration', request_status=7,
                                                     message=message)
             db.session.commit()
+            # create log
+            log = EsLog.auto_review(reg_details, "Registration Request", 'Post',
+                                    Status.get_status_type(reg_details.status))
+            app.logger(EsLog.insert_log(log))
 
         return True
 

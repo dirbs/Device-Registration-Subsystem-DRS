@@ -254,10 +254,6 @@ class EsLog:
             reviewer_data['section_status'] = reviewer.get('section_status')
             reviewer_data['comment'] = reviewer.get('comment')
 
-        # print(reviewer_data)
-        # print(if 'section' in reviewer)
-        # exit()
-
         log = {
             "script": es_lang,
             "reviewer_info": reviewer_data,
@@ -272,3 +268,37 @@ class EsLog:
             "description": description
         }
         return log
+
+    @staticmethod
+    def auto_review(request, request_type, method, status):
+
+        date = datetime.now()
+        date = date.strftime("%Y-%m-%d %H:%M:%S")
+
+        es_lang = {"lang": "painless"}
+
+        reviewer_data = {
+            'reviewer_name': 'Automated Process',
+            'reviewer_id': '000',
+            'request_type': request_type,
+            'reg_id': request.id
+        }
+
+        log = {
+            "script": es_lang,
+            "reviewer_info": reviewer_data,
+            "reg_id": request.id,
+            "tracking_id": request.tracking_id,
+            "user_name": request.user_name,
+            "user_id": request.user_id,
+            "status": status,
+            "request_type": request_type,
+            "method": method,
+            "created_at": date,
+            "description": "{req_type} created by user: {user} & Automatically {status} by system".format(
+                req_type=request_type, user=request.user_name, status=status
+            )
+        }
+
+        return log
+
