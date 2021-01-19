@@ -32,7 +32,7 @@ from app.api.v1.schema.devicedetails import DeviceDetailsSchema
 from app.api.v1.schema.regdetails import RegistrationDetailsSchema
 from app.api.v1.schema.regdetailsupdate import RegistrationDetailsUpdateSchema
 from app.api.v1.schema.regdocuments import RegistrationDocumentsSchema
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 
 
 class RegistrationRoutes(Resource):

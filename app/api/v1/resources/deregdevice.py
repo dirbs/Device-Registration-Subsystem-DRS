@@ -28,7 +28,7 @@ from app.api.v1.models.deregdetails import DeRegDetails
 from app.api.v1.models.deregdevice import DeRegDevice
 from app.api.v1.models.status import Status
 from app.api.v1.schema.deregdevice import DeRegRequestSchema, DeRegDeviceSchema, DeRegRequestUpdateSchema
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 
 
 class DeRegDeviceRoutes(Resource):

@@ -31,7 +31,7 @@ from app.api.v1.models.status import Status
 from app.api.v1.schema.regdocuments import RegistrationDocumentsSchema
 from app.api.v1.schema.regdocumentsupdate import RegistrationDocumentsUpdateSchema
 from app.api.v1.models.notification import Notification
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 
 
 class RegDocumentRoutes(Resource):
