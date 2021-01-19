@@ -116,12 +116,6 @@ class ConfigApp:
         self.app.config['JASMIN_INDIVIDUAL_SEND'] = self.config.get('jasmin_server')['individual_send']
         self.app.config['JASMIN_BATCH_SEND'] = self.config.get('jasmin_server')['batch_send']
 
-
-# jasmin_server:
-# url: 'http://192.168.100.42'
-# port: ':8080'
-# individual_send: '/secure/send'
-# batch_send: '/secure/sendbatch'
         self.app.config['USSD_PASSWORD_STRENGTH'] = self.config.get('ussd_password_strength')
 
         # app.config['MAX_CONTENT_LENGTH'] = 28 * 3 * 1024 * 1024
