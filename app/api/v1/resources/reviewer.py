@@ -40,6 +40,8 @@ from app.api.v1.schema.reviewer import UpdateReviewerArgs, SuccessResponse, Subm
     SectionReviewArgs, DeviceQuota as DeviceQuotaSchema, DeviceQuotaArgs, RequestTypes, DevicesDescription, \
     IMEIRegStatus, IMEIRegStatusArgs, Documents, DocumentsApiArgs, DeviceDescriptionArgs, Sections as SectionSchema, \
     SectionsArgs, SectionTypes, IMEIClassification as IMEIClassificationSchema, UnAssignReviewerArgs, SubmitReviewArgs
+from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.status import Status
 
 
 class AssignReviewer(MethodResource):
@@ -67,11 +69,23 @@ class AssignReviewer(MethodResource):
         if request_type == RequestTypes.REG_REQUEST.value:  # if it is a registration request
             if RegDetails.exists(request_id):
                 request = RegDetails.get_by_id(request_id)
+
                 if request.status == 3 and request.report is not None:
                     assigned = RegDetails.update_reviewer_id(reviewer_id, reviewer_name, request_id)
                     if assigned is True:
                         res = {'message': 'reviewer {rev_id} assigned to request {req_id}'.format(
                             rev_id=reviewer_id, req_id=request_id)}
+
+                        # Log Data
+                        description = 'Reviewer {rev_name} assigned to registration request id: {req_id}'.format(
+                            rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                        log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                       request_details=request,
+                                                       status=Status.get_status_type(request.status),
+                                                       description=description)
+                        EsLog.insert_log(log)
+
                         return Response(json.dumps(SuccessResponse().dump(res).data),
                                         status=201, mimetype='application/json')
                     else:
@@ -89,11 +103,23 @@ class AssignReviewer(MethodResource):
         else:  # if it is a de-registration request
             if DeRegDetails.exists(request_id):
                 request = DeRegDetails.get_by_id(request_id)
+
                 if request.status == 3 and request.report is not None:
                     assigned = DeRegDetails.update_reviewer_id(reviewer_id, reviewer_name, request_id)
                     if assigned is True:
                         res = {'message': 'reviewer {rev_id} assigned to request {req_id}'.format(
                             rev_id=reviewer_id, req_id=request_id)}
+
+                        # Log data
+                        description = 'Reviewer {rev_name} assigned to de-registration request id: {req_id}'.format(
+                            rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                        log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="De Registration Request",
+                                                       request_details=request,
+                                                       status=Status.get_status_type(request.status),
+                                                       description=description)
+                        EsLog.insert_log(log)
+
                         return Response(json.dumps(SuccessResponse().dump(res).data),
                                         status=201,
                                         mimetype='application/json')
@@ -140,6 +166,20 @@ class UnAssignReviewer(MethodResource):
                     res = {
                         'message': 'Successfully un-assigned the request'
                     }
+
+                    # log data
+
+                    kwargs['reviewer_name'] = request.reviewer_name
+
+                    description = 'Reviewer {rev_name} un-assigned from registration request id: {req_id}'.format(
+                        rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                    log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                   request_details=request,
+                                                   status=Status.get_status_type(request.status),
+                                                   description=description)
+                    EsLog.insert_log(log)
+
                     return Response(json.dumps(SuccessResponse().dump(res).data),
                                     status=201, mimetype='application/json')
                 else:
@@ -158,6 +198,19 @@ class UnAssignReviewer(MethodResource):
                     res = {
                         'message': 'Successfully un-assigned the request'
                     }
+
+                    # log data
+                    kwargs['reviewer_name'] = request.reviewer_name
+
+                    description = 'Reviewer {rev_name} un-assigned from de-registration request id: {req_id}'.format(
+                        rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                    log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="De-Registration Request",
+                                                   request_details=request,
+                                                   status=Status.get_status_type(request.status),
+                                                   description=description)
+                    EsLog.insert_log(log)
+
                     return Response(json.dumps(SuccessResponse().dump(res).data),
                                     status=201, mimetype='application/json')
                 else:
@@ -215,6 +268,20 @@ class ReviewSection(MethodResource):
 
                             return Response(app.json_encoder.encode(res),
                                             status=422, mimetype='application/json')
+
+                        # log data
+                        kwargs['section_status'] = Status.get_status_type(section_status)
+
+                        description = 'Reviewer {rev_name} reviewed section {section}' \
+                                      ' for registration request id: {req_id}'.\
+                            format(rev_name=kwargs['reviewer_name'], req_id=request.id, section=review_section)
+
+                        log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                       request_details=request,
+                                                       status=Status.get_status_type(request.status),
+                                                       description=description)
+                        EsLog.insert_log(log)
+
                         RegDetails.add_comment(review_section,
                                                comment,
                                                reviewer_id,
@@ -245,6 +312,19 @@ class ReviewSection(MethodResource):
 
                             return Response(app.json_encoder.encode(res),
                                             status=422, mimetype='application/json')
+                        # log data
+                        kwargs['section_status'] = Status.get_status_type(section_status)
+
+                        description = 'Reviewer {rev_name} reviewed section {section}' \
+                                      ' for de-registration request id: {req_id}'\
+                            .format(rev_name=kwargs['reviewer_name'], req_id=request.id, section=review_section)
+
+                        log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="De-Registration Request",
+                                                       request_details=request,
+                                                       status=Status.get_status_type(request.status),
+                                                       description=description)
+                        EsLog.insert_log(log)
+
                         DeRegDetails.add_comment(review_section,
                                                  comment,
                                                  reviewer_id,
@@ -749,6 +829,20 @@ class SubmitReview(MethodResource):
                                 'status': request.status,
                                 'message': 'case {id} updated successfully'.format(id=request_id)
                             }
+
+                            # log data
+                            request = RegDetails.get_by_id(request_id)
+                            kwargs['reviewer_name'] = request.reviewer_name
+                            description = 'Reviewer {rev_name} rejected registration request id: ' \
+                                          '{req_id} because sections are in rejected state'\
+                                .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                            log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                           request_details=request,
+                                                           status=Status.get_status_type(request.status),
+                                                           description=description)
+                            EsLog.insert_log(log)
+
                             return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                             status=201, mimetype='application/json')
                         elif all(status == 6 for status in sections_info):
@@ -789,6 +883,19 @@ class SubmitReview(MethodResource):
                                 'status': request.status,
                                 'message': 'case {id} updated successfully'.format(id=request_id)
                             }
+
+                            # log data
+                            request = RegDetails.get_by_id(request_id)
+                            kwargs['reviewer_name'] = request.reviewer_name
+                            description = 'Reviewer {rev_name} approved registration request id: {req_id}' \
+                                .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                            log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                           request_details=request,
+                                                           status=Status.get_status_type(request.status),
+                                                           description=description)
+                            EsLog.insert_log(log)
+
                             return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                             status=201, mimetype='application/json')
                         # check if any section is information requested state
@@ -809,6 +916,19 @@ class SubmitReview(MethodResource):
                                 'status': request.status,
                                 'message': 'case {id} updated successfully'.format(id=request_id)
                             }
+
+                            # log data
+                            request = RegDetails.get_by_id(request_id)
+                            kwargs['reviewer_name'] = request.reviewer_name
+                            description = 'Reviewer {rev_name} reviewed registration request id: {req_id}' \
+                                .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                            log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="Registration Request",
+                                                           request_details=request,
+                                                           status=Status.get_status_type(request.status),
+                                                           description=description)
+                            EsLog.insert_log(log)
+
                             return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                             status=201, mimetype='application/json')
                         elif any(status is None for status in sections_info):
@@ -870,6 +990,19 @@ class SubmitReview(MethodResource):
                                 'status': request.status,
                                 'message': 'case {id} updated successfully'.format(id=request_id)
                             }
+
+                            # log data
+                            kwargs['reviewer_name'] = request.reviewer_name
+                            description = 'Reviewer {rev_name} rejected de-registration request id: ' \
+                                          '{req_id} because the sections are in rejected state' \
+                                .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                            log = EsLog.reviewer_serialize(kwargs, method='Put', review_type="De-Registration Request",
+                                                           request_details=request,
+                                                           status=Status.get_status_type(request.status),
+                                                           description=description)
+                            EsLog.insert_log(log)
+
                             return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                             status=201, mimetype='application/json')
                         elif all(status == 6 for status in sections_info):
@@ -893,6 +1026,19 @@ class SubmitReview(MethodResource):
                                     'status': request.status,
                                     'message': 'case {id} updated successfully'.format(id=request_id)
                                 }
+
+                                # log data
+                                kwargs['reviewer_name'] = request.reviewer_name
+                                description = 'Reviewer {rev_name} approved de-registration request id: {req_id}'\
+                                    .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                                log = EsLog.reviewer_serialize(kwargs, method='Put',
+                                                               review_type="De-Registration Request",
+                                                               request_details=request,
+                                                               status=Status.get_status_type(request.status),
+                                                               description=description)
+                                EsLog.insert_log(log)
+
                                 return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                                 status=201, mimetype='application/json')
                             elif return_status is False and invalid_imeis:
@@ -926,6 +1072,19 @@ class SubmitReview(MethodResource):
                                 'status': request.status,
                                 'message': 'case {id} updated successfully'.format(id=request_id)
                             }
+
+                            # log data
+                            kwargs['reviewer_name'] = request.reviewer_name
+                            description = 'Reviewer {rev_name} reviewed de-registration request id: {req_id}' \
+                                .format(rev_name=kwargs['reviewer_name'], req_id=request.id)
+
+                            log = EsLog.reviewer_serialize(kwargs, method='Put',
+                                                           review_type="De-Registration Request",
+                                                           request_details=request,
+                                                           status=Status.get_status_type(request.status),
+                                                           description=description)
+                            EsLog.insert_log(log)
+
                             return Response(json.dumps(SubmitSuccessResponse().dump(res).data),
                                             status=201, mimetype='application/json')
                         elif any(status is None for status in sections_info):

@@ -56,7 +56,7 @@ class DeRegDocuments(db.Model):
     def trash_document(cls, type_id, reg_details):
         """Remove and purge a document from the system."""
         try:
-            document = cls.query.filter_by(document_id=type_id, dereg_id=reg_details.id).one()
+            document = cls.query.filter_by(document_id=type_id, dereg_id=reg_details.id).first()
             cls.delete(document.id)
             Utilities.remove_file(document.filename, reg_details.tracking_id)
         except Exception:

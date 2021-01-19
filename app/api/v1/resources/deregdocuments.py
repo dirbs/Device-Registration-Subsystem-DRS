@@ -31,6 +31,7 @@ from app.api.v1.models.status import Status
 from app.api.v1.schema.deregdocuments import DeRegDocumentsSchema
 from app.api.v1.schema.deregdocumentsupdate import DeRegDocumentsUpdateSchema
 from app.api.v1.models.notification import Notification
+from app.api.v1.models.eslog import EsLog, es
 
 
 class DeRegDocumentRoutes(Resource):
@@ -92,7 +93,10 @@ class DeRegDocumentRoutes(Resource):
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             dereg_details.update_status('Pending Review')
             message = schema.dump(created, many=True).data
+            log = EsLog.new_doc_serialize(message, request_type="De-Registration", regdetails=dereg_details,
+                                          reg_status="Pending Review", method='Post', request='De-Registration')
             db.session.commit()
+            EsLog.insert_log(log)
             return Response(json.dumps(message), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
@@ -144,7 +148,11 @@ class DeRegDocumentRoutes(Resource):
             else:
                 dereg_details.update_status('Pending Review')
             response = schema.dump(updated, many=True).data
+
+            log = EsLog.new_doc_serialize(response, request_type="De-Registration", regdetails=dereg_details,
+                                          reg_status="Pending Review", method='Put', request='De-Registration')
             db.session.commit()
+            EsLog.insert_log(log)
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover

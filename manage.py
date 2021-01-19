@@ -26,6 +26,7 @@ from scripts.db import Seed
 from scripts.listgen import ListGenerator
 from scripts.listgen_ddcds import ListGenerationFull
 from scripts.listgen_ddcds import ListGenerationDelta
+from app.api.v1.models.eslog import EsLog, EsIndex
 
 
 migrate = Migrate(app, db)
@@ -36,6 +37,7 @@ manager.add_command('seed-db', Seed(db))
 manager.add_command('genlist', ListGenerator(db))
 manager.add_command('genlist-ddcds-full', ListGenerationFull)
 manager.add_command('genlist-ddcds-delta', ListGenerationDelta)
+manager.add_command('create-index', EsIndex())
 
 
 if __name__ == '__main__':

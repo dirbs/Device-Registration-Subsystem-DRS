@@ -95,6 +95,7 @@ class ConfigApp:
         self.app.config['MAX_IMEI_LENGTH'] = int(global_config.get('max_imei_length'))
         self.app.config['AUTOMATE_IMEI_CHECK'] = self.config.get('automate_imei_check')
         self.app.config['USE_GSMA_DEVICE_INFO'] = self.config.get('use_gsma_device_info')
+        self.app.config['es'] = self.config.get('elastic_server')
 
         self.app.config['CELERY_BROKER_URL'] = celery_config['RabbitmqUrl']
         self.app.config['result_backend'] = celery_config['RabbitmqBackend']
