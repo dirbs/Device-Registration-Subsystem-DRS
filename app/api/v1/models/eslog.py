@@ -16,7 +16,7 @@ from elasticsearch import Elasticsearch
 from app import app
 from datetime import datetime
 from app.api.v1.models.status import Status
-import sys
+from app.config import ConfigParser
 
 from flask_script import Command
 
@@ -25,7 +25,8 @@ class EsIndex(Command):
 
     def __init__(self):
         super().__init__()
-        self.es = Elasticsearch([{'host': app.config['es']['Host'], 'port': app.config['es']['Port']}])
+        config = ConfigParser('etc/config.yml').parse_config()
+        self.es = Elasticsearch([{'host': config['elastic_server']['Host'], 'port': config['elastic_server']['Port']}])
 
     def __create_es_index(self):
         mapping = '''{
