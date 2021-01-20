@@ -40,7 +40,7 @@ from app.api.v1.schema.reviewer import UpdateReviewerArgs, SuccessResponse, Subm
     SectionReviewArgs, DeviceQuota as DeviceQuotaSchema, DeviceQuotaArgs, RequestTypes, DevicesDescription, \
     IMEIRegStatus, IMEIRegStatusArgs, Documents, DocumentsApiArgs, DeviceDescriptionArgs, Sections as SectionSchema, \
     SectionsArgs, SectionTypes, IMEIClassification as IMEIClassificationSchema, UnAssignReviewerArgs, SubmitReviewArgs
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 from app.api.v1.models.status import Status
 
 

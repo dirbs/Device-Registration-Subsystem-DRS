@@ -31,7 +31,7 @@ from app.api.v1.schema.devicedetails import DeviceDetailsSchema
 from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
 from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 
 
 class DeviceDetailsRoutes(Resource):
