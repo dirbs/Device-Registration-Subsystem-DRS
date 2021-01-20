@@ -148,7 +148,9 @@ class RegistrationRoutes(Resource):
                              'processing_status': reg_details.processing_status,
                              'report_status': reg_details.report_status
                              })
+
             validation_errors = schema.validate(args)
+
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -158,6 +160,8 @@ class RegistrationRoutes(Resource):
                     return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
+                    log = EsLog.new_request_serialize(response, "Close Registration", imeis=imei_file, method="Put")
+                    EsLog.insert_log(log)
                     response = schema.dump(response, many=False).data
                     return Response(json.dumps(response), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))

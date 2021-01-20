@@ -83,7 +83,11 @@ class EsLog:
             return log
 
         if method is not None and method.lower() == "put":
-            description = "Request updated by "
+            if log_data.status == 8:
+                description = "Request closed by "
+            else:
+                description = "Request updated by "
+
             log = {
                 "script": es_lang,
                 "reg_id": log_data.id,
