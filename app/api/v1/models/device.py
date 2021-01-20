@@ -138,9 +138,10 @@ class Device(db.Model):
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
                     print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
-        except Exception:  # pragma: no cover
+        except Exception as e:  # pragma: no cover
             reg_details.update_processing_status('Failed')
             reg_details.update_report_status('Failed')
+            app.logger.exception(e)
             db.session.commit()
 
     @staticmethod
@@ -200,8 +201,8 @@ class Device(db.Model):
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
 
                     for section in auto_approved_sections:
-                        RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed', section_status
-                                               , reg_details.id)
+                        RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed',
+                                               section_status, reg_details.id)
 
                     reg_details.summary = json.dumps({'summary': result})
                     reg_details.report = result.get('compliant_report_name')
@@ -217,10 +218,10 @@ class Device(db.Model):
                     db.session.commit()
 
                     # create log
-                    log = EsLog.auto_review(reg_details, "Registration Request", 'Post', Status.get_status_type(status))
-                    app.logger(EsLog.insert_log(log))
+                    log = EsLog.auto_review(reg_details, "Registration Request", 'Post', status)
+                    EsLog.insert_log(log)
 
-        except Exception:  # pragma: no cover
+        except Exception as e:  # pragma: no cover
             db.session.rollback()
             reg_details.update_processing_status('Failed')
             reg_details.update_status('Failed')
@@ -229,10 +230,11 @@ class Device(db.Model):
                                                     request_type='registration', request_status=7,
                                                     message=message)
             db.session.commit()
+            app.logger.exception(e)
             # create log
             log = EsLog.auto_review(reg_details, "Registration Request", 'Post',
                                     Status.get_status_type(reg_details.status))
-            app.logger(EsLog.insert_log(log))
+            EsLog.insert_log(log)
 
         return True
 
