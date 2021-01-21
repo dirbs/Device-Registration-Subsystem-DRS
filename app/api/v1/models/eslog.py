@@ -295,7 +295,7 @@ class EsLog:
             "request_type": request_type,
             "method": method,
             "created_at": date,
-            "description": "{req_type} created by user: {user} & Automatically {status} by system".format(
+            "description": "{req_type} created by {user} & Automatically {status} by System".format(
                 req_type=request_type, user=request.user_name, status=status
             )
         }
