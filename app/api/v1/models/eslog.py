@@ -16,20 +16,15 @@ from elasticsearch import Elasticsearch
 from app import app
 from datetime import datetime
 from app.api.v1.models.status import Status
-import sys
 
 from flask_script import Command
-
-
-es = Elasticsearch([{'host': app.config['es']['Host'],
-                   'port': app.config['es']['Port']}])
 
 
 class EsIndex(Command):
 
     def __init__(self):
         super().__init__()
-        self.es = es
+        self.es = Elasticsearch([{'host': app.config['es']['Host'], 'port': app.config['es']['Port']}])
 
     def __create_es_index(self):
         mapping = '''{
@@ -48,7 +43,7 @@ class EsIndex(Command):
                     }
                     }'''
         self.es.indices.delete(index=app.config['es']['Index'], ignore=[400, 404])
-        print(es.indices.create(index=app.config['es']['Index'], body=mapping, ignore=400))
+        print(self.es.indices.create(index=app.config['es']['Index'], body=mapping, ignore=400))
 
     def run(self):
         self.__create_es_index()
@@ -88,7 +83,11 @@ class EsLog:
             return log
 
         if method is not None and method.lower() == "put":
-            description = "Request updated by "
+            if log_data.status == 8:
+                description = "Request closed by "
+            else:
+                description = "Request updated by "
+
             log = {
                 "script": es_lang,
                 "reg_id": log_data.id,
@@ -232,6 +231,7 @@ class EsLog:
 
     @staticmethod
     def insert_log(log):
+        es = Elasticsearch([{'host': app.config['es']['Host'], 'port': app.config['es']['Port']}])
         return es.index(index=app.config['es']['Index'], doc_type="_doc", body=log)
 
     @staticmethod

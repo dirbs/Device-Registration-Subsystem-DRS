@@ -33,7 +33,7 @@ from app.api.v1.schema.deregdetails import DeRegDetailsSchema
 from app.api.v1.schema.deregdetailsupdate import DeRegDetailsUpdateSchema
 from app.api.v1.schema.deregdevice import DeRegDeviceSchema
 from app.api.v1.schema.deregdocuments import DeRegDocumentsSchema
-from app.api.v1.models.eslog import EsLog, es
+from app.api.v1.models.eslog import EsLog
 
 
 class DeRegistrationRoutes(Resource):
