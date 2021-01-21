@@ -74,8 +74,8 @@ class Register_ussd(MethodResource):
         """POST method handler, creates registration requests."""
         tracking_id = uuid.uuid4()
         try:
-
             # get the posted data
+
             args = RegDetails.curate_args(request)
 
             # create Marshmallow object
@@ -97,6 +97,7 @@ class Register_ussd(MethodResource):
 
             # Multi SIM Validation
             response = ast.literal_eval(args['imeis'])
+
             message = DeviceDetailsRoutes.multi_sim_validate(response)
 
             if message is True:
@@ -160,7 +161,10 @@ class Register_ussd(MethodResource):
                 # if user is created, a password is set for it
                 arguments = Ussd_helper.set_args_dict_for_regdetails(args, user_data)
 
+                Utilities.create_directory(tracking_id)
                 reg_response = RegDetails.create(arguments, tracking_id)
+                # delay the process 1 seconds to complete the process
+                time.sleep(1)
                 db.session.commit()
 
                 # get GSMA information and make device call. we get the device id
@@ -202,10 +206,14 @@ class Register_ussd(MethodResource):
                         device_arguments.update({'device_type': 'Smartphone'})
 
                         reg_device = RegDevice.create(device_arguments)
+                        # delay the process 1 seconds to complete the process
+                        time.sleep(1)
 
                         reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
+                        # delay the process 1 seconds to complete the process
+                        time.sleep(1)
 
-                        device_status = 'Approved' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+                        device_status = 'Pending Review'
                         reg_details.update_status(device_status)
 
                         db.session.commit()
@@ -219,8 +227,8 @@ class Register_ussd(MethodResource):
 
                         status_msg = Ussd_helper.set_message_for_user_info(reg_details.status)
 
-                        if reg_details.status == 6:
-                            status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
+                        # if reg_details.status == 6:
+                        status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
 
                         # send user a details about device
                         messages = {
@@ -248,6 +256,9 @@ class Register_ussd(MethodResource):
                         response = {
                             'message': 'Device registration has been processed successfully.'
                         }
+
+                        if status_msg:
+                            response['status_response'] = status_msg
                         return Response(json.dumps(response), status=CODES.get("OK"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 

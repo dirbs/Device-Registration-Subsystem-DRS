@@ -189,7 +189,7 @@ keycloak_server:
 jasmin_server:
   url: 'http://192.168.100.42'
   port: ':8080'
-  send: '/secure/send'
-  batch: '/secure/sendbatch'
+  individual_send: '/secure/send'
+  batch_send: '/secure/sendbatch'
 
 ussd_password_strength: False   # True for strong password
