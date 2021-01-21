@@ -92,10 +92,10 @@ class DeRegDeviceRoutes(Resource):
                 dereg_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
                 dereg.update_status(dereg_status)
                 db.session.commit()
-                DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
                 log = EsLog.new_device_serialize(devices.data, 'Device Deregistration Request', regdetails=dereg,
                                                  imeis=imeis_list, reg_status=dereg_status, method='Post', dereg=True)
                 EsLog.insert_log(log)
+                DeRegDevice.bulk_insert_imeis(device_id_tac_map, imei_tac_map, old_devices, imeis_list, dereg)
                 response = {'devices': devices.data, 'dreg_id': dereg.id}
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
