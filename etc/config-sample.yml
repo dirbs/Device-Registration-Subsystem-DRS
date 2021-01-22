@@ -36,6 +36,8 @@ global:
 
   importer: 1000000
   exporter: 1000000
+  individual: 5
+  ussd: 5
 
   # minimum and maximum global msisdn lengths
   min_msisdn_length: 13

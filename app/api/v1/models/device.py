@@ -101,7 +101,7 @@ class Device(db.Model):
                 db.session.commit()
 
     @classmethod
-    def sync_bulk_create(cls, reg_details, reg_device_id, app):
+    def sync_bulk_create(cls, reg_details, reg_device_id, app, ussd=None):
         """Create devices in bulk."""
         try:
             flatten_imeis = []
@@ -127,6 +127,7 @@ class Device(db.Model):
             db.session.commit()
 
             task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
+
             if task_id:
                 Utilities.pool_summary_request(task_id, reg_details, app)
             else:
@@ -134,9 +135,9 @@ class Device(db.Model):
                 db.session.commit()
                 exit()
 
-            if app.config['AUTOMATE_IMEI_CHECK']:
+            if app.config['AUTOMATE_IMEI_CHECK'] or ussd:
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
-                    print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                    app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
         except Exception as e:  # pragma: no cover
             reg_details.update_processing_status('Failed')
@@ -239,7 +240,7 @@ class Device(db.Model):
         return True
 
     @classmethod
-    def create(cls, reg_details, reg_device_id):
+    def create(cls, reg_details, reg_device_id, ussd=None):
         """Create a new device for a request."""
         from app import app
         try:
@@ -247,12 +248,14 @@ class Device(db.Model):
             db.session.commit()
             cls.bulk_delete(reg_details)
             ApprovedImeis.bulk_delete_imeis(reg_details)
+
             if reg_details.import_type == 'file':
                 thread = threading.Thread(daemon=True, target=cls.async_bulk_create,
                                           args=(reg_details, reg_device_id, app))
                 thread.start()
             else:
-                cls.sync_bulk_create(reg_details, reg_device_id, app)
+                cls.sync_bulk_create(reg_details, reg_device_id, app, ussd)
+
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             reg_details.update_processing_status('Failed')

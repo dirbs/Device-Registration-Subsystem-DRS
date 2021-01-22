@@ -21,14 +21,11 @@ import time
 
 
 from flask import Response, request
-from flask_apispec import marshal_with, doc, MethodResource
-from flask_restful import Resource
+from flask_apispec import MethodResource
 from flask_babel import lazy_gettext as _
 
 from app.api.v1.models.deregdetails import DeRegDetails
-from app.api.v1.schema.deregdetailsupdate import DeRegDetailsUpdateSchema
-from app import app, db
-# from app.api.v1.helpers.error_handlers import INVALID_CNIC_MSG
+from app import app, db, GLOBAL_CONF
 from app.api.v1.models.regdetails import RegDetails
 from app.api.v1.schema.ussd import RegistrationDetailsSchema, UssdTrackingSchema, UssdDeleteSchema, UssdCountSchema
 from app.api.v1.resources.regdevicedetails import DeviceDetailsRoutes
@@ -43,18 +40,12 @@ from app.api.v1.helpers.ussd_helper import Ussd_helper
 from app.metadata import version, db_schema_version
 from app.api.v1.schema.version import VersionSchema
 
-from app.api.v1.models.status import Status
-from app.api.v1.schema.devicedetails import DeviceDetailsSchema
-
 from app.api.v1.helpers.key_cloak import Key_cloak
 from app.api.v1.helpers.sms import Jasmin
 
 from app.api.v1.models.regdevice import RegDevice
 from app.api.v1.models.devicetechnology import DeviceTechnology
-
-
-from app.api.v1.schema.reviewer import ErrorResponse
-from marshmallow import Schema, fields, validates, ValidationError, post_dump, validate, pre_dump
+from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
 
 
 class Register_ussd(MethodResource):
@@ -90,7 +81,7 @@ class Register_ussd(MethodResource):
                 }
                 self.messages_list.append(messages.copy())
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                 return Response(app.json_encoder.encode({"message": "CNIC number is mandatory and must be digits only."}), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -109,7 +100,7 @@ class Register_ussd(MethodResource):
                 }
                 self.messages_list.append(messages.copy())
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
-                print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                 data = {'message': "Something went wrong while checking multi sim check please try again later!"}
                 return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
@@ -126,7 +117,7 @@ class Register_ussd(MethodResource):
                         self.messages_list.append(messages.copy())
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
-                print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                 data = {'message': message}
                 return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
@@ -146,7 +137,7 @@ class Register_ussd(MethodResource):
                     self.messages_list.append(messages.copy())
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
-                print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
@@ -161,10 +152,14 @@ class Register_ussd(MethodResource):
                 arguments = Ussd_helper.set_args_dict_for_regdetails(args, user_data)
 
                 reg_response = RegDetails.create(arguments, tracking_id)
+
+                Utilities.create_directory(tracking_id)
+
                 db.session.commit()
 
                 # get GSMA information and make device call. we get the device id
                 if reg_response.id:
+
                     # get the tac from an imei in the dict and search for GSMA record
                     tac = arguments['imeis'][0][0][0:8]
                     gsma_url = str(app.config['CORE_BASE_URL']+app.config['API_VERSION'])+str('/tac/'+tac)
@@ -182,7 +177,7 @@ class Register_ussd(MethodResource):
                         self.messages_list.append(messages.copy())
 
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
-                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                        app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                         data = {'message': messages['content']}
                         return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
@@ -205,11 +200,14 @@ class Register_ussd(MethodResource):
 
                         reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
 
-                        device_status = 'Approved' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+                        device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
                         reg_details.update_status(device_status)
 
+                        DeviceQuotaModel.get_or_create(reg_response.user_id, 'ussd')
+
                         db.session.commit()
-                        Device.create(reg_details, reg_device.id)
+
+                        Device.create(reg_details, reg_device.id, ussd=True)
 
                         # delay the process 5 seconds to complete the process
                         time.sleep(5)
@@ -242,9 +240,9 @@ class Register_ussd(MethodResource):
                             self.messages_list.append(messages.copy())
 
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
-                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
-                        print("Printing the message array in CLI mode.")
-                        print(self.messages_list)
+                        app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
+                        app.logger.info("Printing the message array in CLI mode.")
+                        app.logger.info(self.messages_list)
                         response = {
                             'message': 'Device registration has been processed successfully.'
                         }
@@ -261,7 +259,7 @@ class Register_ussd(MethodResource):
                     self.messages_list.append(messages.copy())
 
                     jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
-                    print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                    app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                     # response = schema.dump(response, many=False).data
                     data = {'message': [_('Device undergone the process. Please hold your breath.')]}
