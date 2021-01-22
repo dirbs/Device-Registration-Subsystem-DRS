@@ -130,10 +130,12 @@ class DeviceDetailsRoutes(Resource):
             device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
             reg_details.update_status(device_status)
             db.session.commit()
-            Device.create(reg_details, reg_device.id)
+
             log = EsLog.new_device_serialize(response, request_type="Device Registration", regdetails=reg_details,
-                                               reg_status=device_status, method='Post')
+                                             reg_status=device_status, method='Post')
             EsLog.insert_log(log)
+
+            Device.create(reg_details, reg_device.id)
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 

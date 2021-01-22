@@ -148,6 +148,8 @@ class DeRegistrationRoutes(Resource):
                     return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
+                    log = EsLog.new_request_serialize(response, "Close De-Registration", method="Put")
+                    EsLog.insert_log(log)
                     response = schema.dump(response, many=False).data
                     return Response(json.dumps(response), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))

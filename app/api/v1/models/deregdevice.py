@@ -205,14 +205,17 @@ class DeRegDevice(db.Model):
                 reg_details.save()
                 db.session.commit()
                 # create log
-                log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post', Status.get_status_type(status))
-                app.logger(EsLog.insert_log(log))
+                log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post', status)
+                EsLog.insert_log(log)
                 return True
             else:
                 reg_details.update_processing_status('Failed')
                 reg_details.update_report_status('Failed')
                 reg_details.update_status('Failed')
                 db.session.commit()
+                log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post',
+                                        Status.get_status_type(reg_details.status))
+                EsLog.insert_log(log)
 
         except Exception as e: # pragma: no cover
             app.logger.exception(e)
@@ -227,7 +230,7 @@ class DeRegDevice(db.Model):
             # create log
             log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post',
                                     Status.get_status_type(reg_details.status))
-            app.logger(EsLog.insert_log(log))
+            EsLog.insert_log(log)
 
     def save(self):
         """Save the current state of the model."""

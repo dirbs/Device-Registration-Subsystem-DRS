@@ -62,7 +62,10 @@ class EsLog:
         if dereg:
             description = "Deregistration request created by "
             if method is not None and method.lower() == 'put':
-                description = "Deregistration request updated by "
+                if log_data.status == 8:
+                    description = "De-registration request closed by "
+                else:
+                    description = "De-registration request updated by "
 
             log = {
                 "script": es_lang,
@@ -295,7 +298,7 @@ class EsLog:
             "request_type": request_type,
             "method": method,
             "created_at": date,
-            "description": "{req_type} created by user: {user} & Automatically {status} by system".format(
+            "description": "{req_type} created by {user} & Automatically {status} by System".format(
                 req_type=request_type, user=request.user_name, status=status
             )
         }
