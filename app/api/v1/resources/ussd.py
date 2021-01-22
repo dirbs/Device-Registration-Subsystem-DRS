@@ -65,8 +65,8 @@ class Register_ussd(MethodResource):
         """POST method handler, creates registration requests."""
         tracking_id = uuid.uuid4()
         try:
-
             # get the posted data
+
             args = RegDetails.curate_args(request)
 
             # create Marshmallow object
@@ -88,6 +88,7 @@ class Register_ussd(MethodResource):
 
             # Multi SIM Validation
             response = ast.literal_eval(args['imeis'])
+
             message = DeviceDetailsRoutes.multi_sim_validate(response)
 
             if message is True:
@@ -153,8 +154,6 @@ class Register_ussd(MethodResource):
 
                 reg_response = RegDetails.create(arguments, tracking_id)
 
-                Utilities.create_directory(tracking_id)
-
                 db.session.commit()
 
                 # get GSMA information and make device call. we get the device id
@@ -180,8 +179,10 @@ class Register_ussd(MethodResource):
                         app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
                         data = {'message': messages['content']}
+
                         return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                         mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
                     else:
 
                         # set device data args
@@ -197,13 +198,18 @@ class Register_ussd(MethodResource):
                         device_arguments.update({'device_type': 'Smartphone'})
 
                         reg_device = RegDevice.create(device_arguments)
+                        # delay the process 1 seconds to complete the process
+                        time.sleep(1)
 
                         reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
+                        # delay the process 1 seconds to complete the process
+                        time.sleep(1)
 
                         device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+
                         reg_details.update_status(device_status)
 
-                        DeviceQuotaModel.get_or_create(reg_response.user_id, 'ussd')
+                        DeviceQuotaModel.get_or_create(reg_details.user_id, 'ussd')
 
                         db.session.commit()
 
@@ -217,8 +223,8 @@ class Register_ussd(MethodResource):
 
                         status_msg = Ussd_helper.set_message_for_user_info(reg_details.status)
 
-                        if reg_details.status == 6:
-                            status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
+                        # if reg_details.status == 6:
+                        status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
 
                         # send user a details about device
                         messages = {
@@ -246,6 +252,9 @@ class Register_ussd(MethodResource):
                         response = {
                             'message': 'Device registration has been processed successfully.'
                         }
+
+                        if status_msg:
+                            response['status_response'] = status_msg
                         return Response(json.dumps(response), status=CODES.get("OK"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 

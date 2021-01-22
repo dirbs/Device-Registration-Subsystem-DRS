@@ -168,9 +168,7 @@ class DeviceDetailsRoutes(Resource):
             #                                                          app.config['API_VERSION'],
             #                                                          imeis)
 
-            # http://192.168.100.81/api/v2/tac/3564680
-            # print('priting the url: http://192.168.100.81/'+app.config['API_VERSION']+str(imeis))
-            multi_sim_result = MultiSimCheck.validate_imeis_capacity('http://192.168.100.72:5000/',
+            multi_sim_result = MultiSimCheck.validate_imeis_capacity(app.config['CORE_BASE_URL'],
                                                                      app.config['API_VERSION'],
                                                                      imeis)
 
