@@ -198,18 +198,16 @@ class Register_ussd(MethodResource):
                         device_arguments.update({'device_type': 'Smartphone'})
 
                         reg_device = RegDevice.create(device_arguments)
-                        # delay the process 1 seconds to complete the process
-                        time.sleep(1)
 
                         reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
-                        # delay the process 1 seconds to complete the process
-                        time.sleep(1)
 
-                        device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+                        device_status = 'Pending Review'
 
                         reg_details.update_status(device_status)
 
-                        DeviceQuotaModel.get_or_create(reg_details.user_id, 'ussd')
+                        DeviceQuotaModel.get_or_create(reg_response.user_id, 'ussd')
+
+                        Utilities.create_directory(tracking_id)
 
                         db.session.commit()
 
