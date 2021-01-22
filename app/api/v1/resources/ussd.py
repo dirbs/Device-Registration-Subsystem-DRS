@@ -447,7 +447,7 @@ class Delete_record_ussd(MethodResource):
 
                 dereg_id = args['device_id']
 
-                if dereg_id and dereg_id.isdigit() and DeRegDetails.exists(dereg_id):
+                if dereg_id and dereg_id.isdigit() and RegDetails.exists(dereg_id):
 
                     # if record matches with the passed MSISDN
                     device_info = UssdModel.get_by_id(dereg_id)
@@ -468,7 +468,7 @@ class Delete_record_ussd(MethodResource):
                                         status=CODES.get("RECORD_MISMATCH"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
-                        dreg_details = DeRegDetails.get_by_id(dereg_id)
+                        dreg_details = RegDetails.get_by_id(dereg_id)
                 else:
 
                     messages = {
@@ -482,7 +482,6 @@ class Delete_record_ussd(MethodResource):
                     print("Printing the jasmin send response")
                     print(jasmin_send_response)
 
-                    print(jasmin_send_response)
                     if jasmin_send_response:
                         print("Jasmin API response: " + str(jasmin_send_response.status_code))
                     else:
@@ -490,7 +489,6 @@ class Delete_record_ussd(MethodResource):
                     return Response(app.json_encoder.encode({'message': [_('Delete Request not found.')]}),
                                     status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-
                 if dreg_details:
                     args.update({'status': dreg_details.status, 'processing_status': dreg_details.processing_status,
                                  'report_status': dreg_details.report_status})
@@ -510,12 +508,43 @@ class Delete_record_ussd(MethodResource):
                                     status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 if args.get('close_request', None) == 'True':
+
                     response = DeRegDetails.close(dreg_details)
+
                     if isinstance(response, dict):
+
+                        # let the user know about the deregistration
+                        messages = {
+                            'from': 'DRS-USSD',
+                            'to': args['msisdn'],
+                            'content': str(response['message'])
+                        }
+
+                        self.messages_list.append(messages.copy())
+
+                        jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
+
+                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                        print(str(response['message']))
+
                         return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
+
                         response = schema.dump(response, many=False).data
+                        # let the user know about the deregistration
+                        messages = {
+                            'from': 'DRS-USSD',
+                            'to': args['msisdn'],
+                            'content': str("Device with ID: " + str(dereg_id) + " has been DeRegistered")
+                        }
+
+                        self.messages_list.append(messages.copy())
+
+                        jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
+                        print("Jasmin API response: " + str(jasmin_send_response.status_code))
+                        response['response'] = messages['content']
+
                         return Response(json.dumps(response), status=CODES.get("OK"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
@@ -527,11 +556,12 @@ class Delete_record_ussd(MethodResource):
                 messages = {
                     'from': 'DRS-USSD',
                     'to': args['msisdn'],
-                    'content': response if response else 'Response request failed.'
+                    'content': str(response['message'])
                 }
-                self.messages_list.append(messages.copy())
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
+                self.messages_list.append(messages.copy())
+
                 print("Jasmin API response: " + str(jasmin_send_response.status_code))
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
