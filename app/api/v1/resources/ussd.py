@@ -90,7 +90,6 @@ class Register_ussd(MethodResource):
             response = ast.literal_eval(args['imeis'])
 
             message = DeviceDetailsRoutes.multi_sim_validate(response)
-
             if message is True:
                 pass
             elif message is False:
@@ -128,14 +127,30 @@ class Register_ussd(MethodResource):
             validation_errors = schema.validate(args)
 
             if validation_errors:
-
                 for key, value in validation_errors.items():
+
+                    str_val = ''
+                    if key == "imeis":
+                        if isinstance(value[0], dict):
+                            for k_i, v_i in value[0].items():
+                                str_val = str_val + str(v_i[0] + ' ' + args['imeis'][0][k_i])+". "
+                        else:
+                            print(validation_errors)
+                            str_val = str_val + str(value[0])
+                    else:
+                        if key == "msisdn":
+                            if isinstance(value, list):
+                                str_val = str_val + str(value[0])
+
                     messages = {
                         'from': 'DRS-USSD',
                         'to': args['msisdn'],
-                        'content': key +':' + value[0]
+                        'content': key +':' + str(value[0]) if not dict else str(str_val)
                     }
                     self.messages_list.append(messages.copy())
+
+                    print("Printing the jasmin message")
+                    print(messages)
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
@@ -222,7 +237,7 @@ class Register_ussd(MethodResource):
                         status_msg = Ussd_helper.set_message_for_user_info(reg_details.status)
 
                         # if reg_details.status == 6:
-                        status_msg = status_msg + " Your device tracking number is: " + str(reg_details.id)
+                        status_msg = status_msg + " Your device tracking id is: " + str(reg_details.id)
 
                         # send user a details about device
                         messages = {
@@ -237,7 +252,7 @@ class Register_ussd(MethodResource):
                             messages = {
                                 'from': 'DRS-USSD',
                                 'to': args['msisdn'],
-                                'content': "New user created with username: " + arguments[
+                                'content': "New user credentials are, username: " + arguments[
                                     'username'] + " and password: " +
                                            arguments['password']
                             }
@@ -272,7 +287,6 @@ class Register_ussd(MethodResource):
                     data = {'message': [_('Device undergone the process. Please hold your breath.')]}
                     return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                     mimetype=MIME_TYPES.get('APPLICATION_JSON'))
-
         except Exception as e:  # pragma: no cover
             db.session.rollback()
             app.logger.exception(e)
@@ -376,7 +390,7 @@ class Track_record_ussd(MethodResource):
                     messages = {
                         'from': 'DRS-USSD',
                         'to': args['msisdn'],
-                        'content': 'No record found with that ID'
+                        'content': 'No record found with that Device ID'
                     }
                     self.messages_list.append(messages.copy())
 

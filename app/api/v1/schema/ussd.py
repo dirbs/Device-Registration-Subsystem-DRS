@@ -26,40 +26,24 @@ from flask_babel import gettext as _
 
 class RegistrationDetailsSchema(Schema):
     """Schema for USSD Registration routes."""
-
-    # id = fields.Int(required=False)
-    # reviewer_id = fields.Str(required=False)
-    # reviewer_name = fields.Str(required=False)
-    # report_allowed = fields.Boolean(required=False)
-    # user_id = fields.Str(required=True, error_messages={'required': 'User Id is required'})
-    # user_name = fields.Str(required=True, error_messages={'required': 'User Name is required'})
-    # imei_per_device = fields.Int(required=True, error_messages={'required': 'Imei per device count is required'})
-    # m_location = fields.Str(required=True, error_messages={'required': 'manufacturing location is a required field'})
-    # file = fields.Str(required=False)
-    # file_link = fields.Str()
-    # created_at = fields.DateTime()
-    # updated_at = fields.DateTime()
-    # imeis_count = fields.Int(required=False)
-    # status_label = fields.Str(required=False)
-    # processed = fields.Boolean()
-    # processing_status_label = fields.Str()
-    # report_status_label = fields.Str()
-    # tracking_id = fields.Str()
-    # report = fields.String()
-    # duplicate_imeis_file = fields.String(missing='')
     cnic = fields.Int(required=True)
     msisdn = fields.Int(required=True)
     network = fields.Str(required=True)
     imeis = fields.List(fields.List(fields.Str(validate=validate_imei)), required=False)
     device_count = fields.Int(required=True, error_messages={'required': 'Device count is required'})
 
-    # @pre_load()
-    # def file_webpage(self, data):
-    #     """Validates type of input."""
-    #     if 'imeis' not in data and 'file' not in data:
-    #         raise ValidationError('Either file or webpage input is required',
-    #                               field_names=['imeis', 'file']
-    #                               )
+    @pre_load()
+    def valid_imeis(self, data):
+        if 'imeis' in data:
+            try:
+                imeis = data.get('imeis')[0]
+                for individual_imei in imeis:
+                    if individual_imei.isdigit() and (len(individual_imei) > 13) and (len(individual_imei) < 17):
+                        pass
+                    else:
+                        raise ValidationError("IMEI must be digits only and between 14 and 16 characters long.", field_names=['imeis'])
+            except Exception as e:
+                raise ValidationError(str(e), field_names=['imeis'])
 
     @pre_load()
     def convert_imei(self, data):

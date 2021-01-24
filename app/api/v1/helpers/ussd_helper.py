@@ -82,7 +82,7 @@ class Ussd_helper:
         # set status string
         status = Ussd_helper.set_message_for_user_info(device_info.status)
 
-        string_message = "Device id: " + str(device_info.id) + ", User name: " + device_info.user_name + \
+        string_message = "Device Id: " + str(device_info.id) + ", User name: " + device_info.user_name + \
                          ", Device IMEIS: " + str(str_imeis) + " Registered at: " + str(device_info.created_at) + " and Status: " + status
         return string_message
 
