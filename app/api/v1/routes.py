@@ -42,7 +42,8 @@ from app.api.v1.resources.ussd import Register_ussd
 from app.api.v1.resources.ussd import Track_record_ussd
 from app.api.v1.resources.ussd import Delete_record_ussd
 from app.api.v1.resources.ussd import Ussd_records_count
-from app.api.v1.resources.test import Send, SendBatchTest
+from app.api.v1.resources.ussd_scripts import Send, SendBatchTest
+from app.api.v1.resources.ussd_scripts import Ussd_Script
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
 apidoc = ApiDocs(app, 'v1')
@@ -128,6 +129,7 @@ api.add_resource(Ussd_records_count, '/ussd_records_count')
 # test controller for testing purposes
 api.add_resource(Send, '/send')
 api.add_resource(SendBatchTest, '/sendbatch')
+api.add_resource(Ussd_Script, '/ussd_script')
 
 
 docs = apidoc.init_doc()

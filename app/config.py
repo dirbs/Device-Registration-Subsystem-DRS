@@ -80,7 +80,9 @@ class ConfigApp:
         self.app.config['DDCDS_LISTS'] = lists_config.get('ddcds_path')  # ddcds lists dir
         self.app.config['STRICT_HTTPS'] = self.config.get('server')['restrict_https']
         self.app.config['CORE_BASE_URL'] = global_config.get('dirbs_base_url')
+        self.app.config['BASE_URL'] = global_config.get('base_url')
         self.app.config['API_VERSION'] = global_config.get('core_api_v2')
+        self.app.config['API_VERSION_V1'] = global_config.get('core_api_v1')
         self.app.config['BABEL_DEFAULT_LOCALE'] = global_config.get('default_language')
         self.app.config['SUPPORTED_LANGUAGES'] = global_config.get('supported_languages')
         self.app.config['SQLALCHEMY_DATABASE_URI'] = self.database_uri()
