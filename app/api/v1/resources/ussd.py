@@ -80,6 +80,10 @@ class Register_ussd(MethodResource):
                     'content': "CNIC number is mandatory and must be digits only."
                 }
                 self.messages_list.append(messages.copy())
+
+                print("Printing the jasmin message")
+                print(messages)
+
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
@@ -99,6 +103,10 @@ class Register_ussd(MethodResource):
                     'content': "Something went wrong, please try again later"
                 }
                 self.messages_list.append(messages.copy())
+
+                print("Printing the jasmin message")
+                print(self.messages_list)
+
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network=args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
@@ -115,6 +123,9 @@ class Register_ussd(MethodResource):
                             'content': val2
                         }
                         self.messages_list.append(messages.copy())
+
+                print("Printing the jasmin message")
+                print(self.messages_list)
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
@@ -149,8 +160,8 @@ class Register_ussd(MethodResource):
                     }
                     self.messages_list.append(messages.copy())
 
-                    print("Printing the jasmin message")
-                    print(messages)
+                print("Printing the jasmin messages")
+                print(self.messages_list)
 
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
@@ -190,6 +201,9 @@ class Register_ussd(MethodResource):
                         }
                         self.messages_list.append(messages.copy())
 
+                        print("Printing the jasmin messages")
+                        print(self.messages_list)
+
                         jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                         app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
@@ -214,7 +228,18 @@ class Register_ussd(MethodResource):
 
                         reg_device = RegDevice.create(device_arguments)
 
-                        reg_device.technologies = DeviceTechnology.create(reg_device.id, device_arguments.get('technologies'))
+                        reg_device.technologies = DeviceTechnology.create_ussd(reg_device.id, '',device_arguments.get('technologies'))
+
+                        print("////////////////////////////////////////////////////////")
+                        print("print start")
+                        print("printing reg_device after creation")
+                        print(reg_device)
+                        print("printing technologies")
+                        print(device_arguments.get("technologies"))
+                        print("printing reg_device.id")
+                        print(reg_device.id)
+                        print("print Ends")
+                        print("////////////////////////////////////////////////////////")
 
                         device_status = 'Pending Review'
 

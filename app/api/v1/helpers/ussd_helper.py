@@ -31,9 +31,9 @@ class Ussd_helper:
         data.update({'id': reg_response.id})
         data.update({'user_id': arguments['user_id']})
         data.update({'brand': gsma_response["gsma"]["brand_name"]})
-        data.update({'model_name': gsma_response["gsma"]["model_name"]})
+        data.update({'model_name': gsma_response["gsma"]["marketing_name"]})
         data.update({'operating_system': gsma_response["gsma"]["operating_system"]})
-        data.update({'model_num': ""})
+        data.update({'model_num': gsma_response["gsma"]["model_name"]})
         data.update({'device_type': gsma_response["gsma"]["device_type"]})
         data.update({'technologies': gsma_response["gsma"]["bands"]})
         return data

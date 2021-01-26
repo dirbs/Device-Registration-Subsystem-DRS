@@ -85,9 +85,9 @@ class SendBatchTest(MethodResource):
 
         messages_list = []
         messages = {
-            'from': 'ikram',
-            'to': '03337372337',
-            'content': 'This is the first test message to be send to the user'
+            'from': 'sender_name',
+            'to': '03331234567',
+            'content': 'Lorum Ipsum'
         }
         messages_list.append(messages.copy())
 
