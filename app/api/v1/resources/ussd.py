@@ -230,17 +230,6 @@ class Register_ussd(MethodResource):
 
                         reg_device.technologies = DeviceTechnology.create_ussd(reg_device.id, '',device_arguments.get('technologies'))
 
-                        print("////////////////////////////////////////////////////////")
-                        print("print start")
-                        print("printing reg_device after creation")
-                        print(reg_device)
-                        print("printing technologies")
-                        print(device_arguments.get("technologies"))
-                        print("printing reg_device.id")
-                        print(reg_device.id)
-                        print("print Ends")
-                        print("////////////////////////////////////////////////////////")
-
                         device_status = 'Pending Review'
 
                         reg_details.update_status(device_status)
@@ -529,6 +518,8 @@ class Delete_record_ussd(MethodResource):
                                     status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 if dreg_details:
+                    normalized_imeis = Ussd_helper.get_normalized_imeis(dreg_details.imeis)
+                    Utilities.de_register_imeis(normalized_imeis)
                     args.update({'status': dreg_details.status, 'processing_status': dreg_details.processing_status,
                                  'report_status': dreg_details.report_status})
                 validation_errors = schema.validate(args)

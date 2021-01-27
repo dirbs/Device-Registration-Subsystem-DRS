@@ -1,3 +1,5 @@
+import re
+
 class Ussd_helper:
     @staticmethod
     def set_args_dict_for_regdetails(arguments, user_data):
@@ -49,6 +51,13 @@ class Ussd_helper:
 
         return message
 
+    @staticmethod
+    def get_normalized_imeis(dev_imeis):
+        dev_imeis = re.findall(r'\d+', dev_imeis)
+        normalized_imeis = []
+        for sgl_imei in dev_imeis:
+            normalized_imeis.append(sgl_imei[0:14])
+        return normalized_imeis
 
     @staticmethod
     def set_message_for_user_info(status):
