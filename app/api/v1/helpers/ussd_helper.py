@@ -105,3 +105,11 @@ class Ussd_helper:
             'jazz': 'amF6ejoxMjM='
         }.get(network, 'Zm9vOmJhcg==')
 
+    @staticmethod
+    def check_forbidden_string(message):
+        # Hide device details from end user
+        search_for = str(' GSMA models for provided IMEIs are')
+        if search_for in message:
+            msgs_list = message.split(search_for)
+            message = str(msgs_list[0])
+        return message

@@ -117,6 +117,7 @@ class Register_ussd(MethodResource):
                 # create messages for user if any
                 for key1, val1 in message.items():
                     for key2, val2 in val1.items():
+                        val2 = Ussd_helper.check_forbidden_string(val2)
                         messages = {
                             'from': 'DRS-USSD',
                             'to': args['msisdn'],
