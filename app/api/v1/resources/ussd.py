@@ -115,15 +115,19 @@ class Register_ussd(MethodResource):
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
             else:
                 # create messages for user if any
+                changed_msgs = []
                 for key1, val1 in message.items():
                     for key2, val2 in val1.items():
                         val2 = Ussd_helper.check_forbidden_string(val2)
+                        changed_dict = {key2:val2}
+                        changed_msgs.append(changed_dict)
                         messages = {
                             'from': 'DRS-USSD',
                             'to': args['msisdn'],
                             'content': val2
                         }
                         self.messages_list.append(messages.copy())
+                # message = changed_msgs
 
                 print("Printing the jasmin message")
                 print(self.messages_list)
@@ -131,7 +135,7 @@ class Register_ussd(MethodResource):
                 jasmin_send_response = Jasmin.send_batch(self.messages_list, network = args['network'])
                 app.logger.info("Jasmin API response: " + str(jasmin_send_response.status_code))
 
-                data = {'message': message}
+                data = {'message': changed_msgs}
                 return Response(app.json_encoder.encode(data), status=CODES.get('UNPROCESSABLE_ENTITY'),
                                 mimetype=MIME_TYPES.get('APPLICATION_JSON'))
 
