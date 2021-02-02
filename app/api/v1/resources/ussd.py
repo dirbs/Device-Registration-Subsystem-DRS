@@ -244,8 +244,8 @@ class Register_ussd(MethodResource):
 
                         reg_device = RegDevice.create(device_arguments)
 
-                        reg_device.technologies = DeviceTechnology.create_ussd(
-                            reg_device.id, '', device_arguments.get('technologies'))
+                        reg_device.technologies = DeviceTechnology.create(
+                            reg_device.id, device_arguments.get('technologies'), True)
 
                         device_status = 'Pending Review'
 

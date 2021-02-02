@@ -27,7 +27,6 @@ class Ussd_helper:
     @staticmethod
     def set_args_dict_for_devicedetails(reg_response, arguments, gsma_response):
         data = {}
-
         data.update({'reg_id': reg_response.id})
         data.update({'reg_details_id': reg_response.id})
         data.update({'id': reg_response.id})
@@ -37,8 +36,25 @@ class Ussd_helper:
         data.update({'operating_system': gsma_response["gsma"]["operating_system"]})
         data.update({'model_num': gsma_response["gsma"]["model_name"]})
         data.update({'device_type': gsma_response["gsma"]["device_type"]})
-        data.update({'technologies': gsma_response["gsma"]["bands"]})
+        # data.update({'technologies': gsma_response["gsma"]["bands"]})
+        data.update({'technologies': Ussd_helper.set_technology_id(gsma_response)})
+
         return data
+
+    @staticmethod
+    # following method filters out 2G, 3G, 4G and 5G based upon their bands from GSMA TAC DB
+    def set_technology_id(gsma_response):
+        tech_string = str(gsma_response["gsma"]["bands"])
+        if ("LTE" in tech_string) or ("CA_" in tech_string) or ("DC_" in tech_string) or ("WiMAX" in tech_string) or ("UMB" in tech_string):
+            return '4G'
+        elif ("HSPA" in tech_string) or ("HSUPA" in tech_string) or ("HSDPA" in tech_string) or ("EVDO" in tech_string) \
+                or ("WCDMA" in tech_string) or ("UMTS" in tech_string) or ("TDS-CDMA" in tech_string)\
+                or ("TD-SCDMA" in tech_string) or ("CDMA2000" in tech_string):
+            return '3G'
+        elif ("GSM" in tech_string) or ("GPRS" in tech_string) or ("EDGE" in tech_string) or ("CDMA" in tech_string):
+            return '2G'
+        else:
+            return '5G'
 
     @staticmethod
     def set_count_message(msisdn_all_counts):

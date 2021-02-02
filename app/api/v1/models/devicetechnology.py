@@ -25,13 +25,11 @@ class DeviceTechnology(db.Model):
 
     reg_device_id = db.Column(db.Integer, db.ForeignKey('regdevice.id', ondelete='CASCADE'))
     technology_id = db.Column(db.Integer, db.ForeignKey('technologies.id'))
-    ussd_autofill_technology = db.Column(db.String(1000), nullable=True)
 
-    def __init__(self, reg_device_id, technology, ussd_autofill_technology):
+    def __init__(self, reg_device_id, technology):
         """Constructor."""
         self.reg_device_id = reg_device_id
         self.technology_id = Technologies.get_technology_id(technology)
-        self.ussd_autofill_technology = ussd_autofill_technology
 
     def save(self):
         """Save the current state of the model."""
@@ -43,23 +41,18 @@ class DeviceTechnology(db.Model):
             raise Exception
 
     @classmethod
-    def create(cls, reg_device_id, technologies):
+    def create(cls, reg_device_id, technologies, ussd_call=False):
         """Associate a technology with a request."""
         try:
-            for tech in technologies:
-                dev_tech = cls(reg_device_id, tech)
+            if ussd_call is False:
+                for tech in technologies:
+                    dev_tech = cls(reg_device_id, tech)
+                    dev_tech.save()
+                return technologies
+            else:
+                dev_tech = cls(reg_device_id, technologies)
                 dev_tech.save()
-            return technologies
-        except Exception:
-            raise Exception
-
-    @classmethod
-    def create_ussd(cls, reg_device_id, technologies, ussd_autofill_technology=None):
-        """Associate a technology with a request."""
-        try:
-            dev_tech = cls(reg_device_id, technologies, ussd_autofill_technology)
-            dev_tech.save()
-            return ussd_autofill_technology
+                return technologies
         except Exception:
             raise Exception
 
