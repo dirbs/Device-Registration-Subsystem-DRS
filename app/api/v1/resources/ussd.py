@@ -47,6 +47,10 @@ from app.api.v1.models.regdevice import RegDevice
 from app.api.v1.models.devicetechnology import DeviceTechnology
 from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
 
+from app.api.v1.models.eslog import EsLog
+from app.api.v1.schema.regdetails import RegistrationDetailsSchema as rdSchema
+from app.api.v1.schema.devicedetails import DeviceDetailsSchema
+
 
 class Register_ussd(MethodResource):
     """Class for handling version api resources."""
@@ -189,6 +193,13 @@ class Register_ussd(MethodResource):
 
                 # get GSMA information and make device call. we get the device id
                 if reg_response.id:
+                    schema2 = rdSchema()
+                    response = schema2.dump(reg_response, many=False).data
+
+                    # Todo: add logging here or below after condition check
+                    log = EsLog.new_request_serialize(response, 'USSD Registration', method='Post',
+                                                imeis=arguments['imeis'])
+                    EsLog.insert_log(log)
 
                     # get the tac from an imei in the dict and search for GSMA record
                     tac = arguments['imeis'][0][0][0:8]
@@ -233,7 +244,8 @@ class Register_ussd(MethodResource):
 
                         reg_device = RegDevice.create(device_arguments)
 
-                        reg_device.technologies = DeviceTechnology.create_ussd(reg_device.id, '',device_arguments.get('technologies'))
+                        reg_device.technologies = DeviceTechnology.create_ussd(
+                            reg_device.id, '', device_arguments.get('technologies'))
 
                         device_status = 'Pending Review'
 
@@ -244,6 +256,13 @@ class Register_ussd(MethodResource):
                         Utilities.create_directory(tracking_id)
 
                         db.session.commit()
+
+                        device_schema = DeviceDetailsSchema()
+                        device_serialize_data = device_schema.dump(reg_device, many=False).data
+                        log = EsLog.new_device_serialize(device_serialize_data, request_type="USSD Device Registration",
+                                                         regdetails=reg_details,
+                                                         reg_status=device_status, method='Post')
+                        EsLog.insert_log(log)
 
                         Device.create(reg_details, reg_device.id, ussd=True)
 
@@ -565,6 +584,8 @@ class Delete_record_ussd(MethodResource):
                         return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
+                        log = EsLog.new_request_serialize(dreg_details, 'USSD De-Registration', method='Put')
+                        EsLog.insert_log(log)
 
                         response = schema.dump(response, many=False).data
                         # let the user know about the deregistration

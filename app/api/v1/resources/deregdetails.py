@@ -97,7 +97,7 @@ class DeRegistrationRoutes(Resource):
                 response = DeRegDetails.create(args, tracking_id)
                 db.session.commit()
                 response = schema.dump(response, many=False).data
-                log = EsLog.new_request_serialize(response, imeis_list, "DeRegistration", dereg=True, method="Post")
+                log = EsLog.new_request_serialize(response, "DeRegistration", imeis=imeis_list, dereg=True, method="Post")
                 EsLog.insert_log(log)
                 response = {'request': response, 'devices': gsma_response}
                 return Response(json.dumps(response), status=CODES.get("OK"),
