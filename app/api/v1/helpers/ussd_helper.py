@@ -13,7 +13,7 @@ class Ussd_helper:
         data.update({'device_count': arguments['device_count']})
         data.update({'imei_per_device': str(len(arguments['imeis'][0]))})
         data.update({'import_type': "USSD"})
-        data.update({'imeis': arguments['imeis']})
+        data.update({'imeis': Ussd_helper.return_imeis_list(arguments['imeis'])})
         data.update({'m_location': "local"})
         data.update({'status': 1})
 
@@ -23,6 +23,15 @@ class Ussd_helper:
             data.update({'password': user_data['password']})
 
         return data
+
+    @staticmethod
+    def return_imeis_list(imeis_str):
+        imeis_list_of_list = []
+        imeis_list = imeis_str.pop()
+        imeis_list_str = [str(i) for i in imeis_list]
+        imeis_list_of_list.append(imeis_list_str)
+
+        return imeis_list_of_list
 
     @staticmethod
     def set_args_dict_for_devicedetails(reg_response, arguments, gsma_response):

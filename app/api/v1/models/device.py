@@ -105,10 +105,19 @@ class Device(db.Model):
         """Create devices in bulk."""
         try:
             flatten_imeis = []
-            imeis_lists = ast.literal_eval(reg_details.imeis)
+
+            if ussd is None:
+                imeis_lists = ast.literal_eval(reg_details.imeis)
+            else:
+                imeis_lists = []
+                ims = reg_details.imeis
+                imeis_lists.append(list(ims.strip('}{').split(",")))
+
             for device_imeis in imeis_lists:
+
                 device = cls(device_imeis[0][:8], reg_details.id, reg_device_id)
                 device.save()
+
                 for imei in device_imeis:
                     flatten_imeis.append(imei)
                     imei_device = ImeiDevice(imei, device.id)
