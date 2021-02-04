@@ -103,10 +103,15 @@ class Ussd_helper:
 
 
     @staticmethod
-    def set_record_info(device_info):
+    def set_record_info(device_info, ussd_call=False):
         import ast
         # set IMEIS string
-        imeis_dict = ast.literal_eval(device_info.imeis)
+        if ussd_call is False:
+            imeis_dict = ast.literal_eval(device_info.imeis)
+        else:
+            imeis_dict = []
+            ims = device_info.imeis
+            imeis_dict.append(list(ims.strip('][').strip('}{').split(",")))
         imeis = imeis_dict[0]
         if len(imeis) > 1:
             str_imeis = ','.join(str(e) for e in imeis)
