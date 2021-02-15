@@ -154,6 +154,8 @@ class DeRegDevice(db.Model):
         # TODO: Need to remove duplicated session which throws warning
         from app.api.v1.resources.reviewer import SubmitReview
         from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        from app.api.v1.models.status import Status
+        from app.api.v1.models.eslog import EsLog
         import json
         sr = SubmitReview()
 
@@ -202,12 +204,18 @@ class DeRegDevice(db.Model):
                 reg_details.report_allowed = True
                 reg_details.save()
                 db.session.commit()
+                # create log
+                log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post', status)
+                EsLog.insert_log(log)
                 return True
             else:
                 reg_details.update_processing_status('Failed')
                 reg_details.update_report_status('Failed')
                 reg_details.update_status('Failed')
                 db.session.commit()
+                log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post',
+                                        Status.get_status_type(reg_details.status))
+                EsLog.insert_log(log)
 
         except Exception as e: # pragma: no cover
             app.logger.exception(e)
@@ -219,6 +227,10 @@ class DeRegDevice(db.Model):
                                                     request_type='registration', request_status=7,
                                                     message=message)
             db.session.commit()
+            # create log
+            log = EsLog.auto_review(reg_details, "De-Registration Request", 'Post',
+                                    Status.get_status_type(reg_details.status))
+            EsLog.insert_log(log)
 
     def save(self):
         """Save the current state of the model."""

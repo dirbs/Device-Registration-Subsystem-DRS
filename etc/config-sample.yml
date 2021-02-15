@@ -36,6 +36,8 @@ global:
 
   importer: 1000000
   exporter: 1000000
+  individual: 5
+  ussd: 5
 
   # minimum and maximum global msisdn lengths
   min_msisdn_length: 13
@@ -48,9 +50,10 @@ global:
   max_imei_per_device: 5
 
   #URLS
-  dirbs_base_url: '0.0.0.0:5000/'
+  dirbs_base_url: 'http://192.168.100.72:5000/'
   core_api_v1: 'api/v1'
   core_api_v2: 'api/v2'
+  base_url: 'http://127.0.0.1:5000/'
 
 
   #Directories
@@ -111,6 +114,11 @@ server:
   # value should be either "True" or "False"
   restrict_https: False
 
+#Elastic Search
+elastic_server:
+  Host : 'localhost'
+  Port : '9200'
+  Index: "database name"
 # celery configurations
 celery:
 
@@ -169,3 +177,22 @@ realtime_checks:
 stolen_info: 'stolen_status'
 
 registration_info: 'registration_status'
+
+# Keycloak
+keycloak_server:
+  url: 'http://192.168.100.216'
+  port: ':8080'
+  token: '/auth/realms/master/protocol/openid-connect/token'
+  search: '/auth/admin/realms/DIRBS/users?briefRepresentation=true&search='
+  users: '/auth/admin/realms/DIRBS/users'
+  reset_password: '/reset-password'
+  group_id: '8d3bdaff-15c4-4097-8fb2-121d2b7ad76d'
+
+# jasmin
+jasmin_server:
+  url: 'http://192.168.100.42'
+  port: ':8080'
+  individual_send: '/secure/send'
+  batch_send: '/secure/sendbatch'
+
+ussd_password_strength: False   # True for strong password

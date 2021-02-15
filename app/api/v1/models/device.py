@@ -101,14 +101,23 @@ class Device(db.Model):
                 db.session.commit()
 
     @classmethod
-    def sync_bulk_create(cls, reg_details, reg_device_id, app):
+    def sync_bulk_create(cls, reg_details, reg_device_id, app, ussd=None):
         """Create devices in bulk."""
         try:
             flatten_imeis = []
-            imeis_lists = ast.literal_eval(reg_details.imeis)
+
+            if ussd is None:
+                imeis_lists = ast.literal_eval(reg_details.imeis)
+            else:
+                imeis_lists = []
+                ims = reg_details.imeis
+                imeis_lists.append(list(ims.strip('}{').split(",")))
+
             for device_imeis in imeis_lists:
+
                 device = cls(device_imeis[0][:8], reg_details.id, reg_device_id)
                 device.save()
+
                 for imei in device_imeis:
                     flatten_imeis.append(imei)
                     imei_device = ImeiDevice(imei, device.id)
@@ -127,6 +136,7 @@ class Device(db.Model):
             db.session.commit()
 
             task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
+
             if task_id:
                 Utilities.pool_summary_request(task_id, reg_details, app)
             else:
@@ -134,19 +144,22 @@ class Device(db.Model):
                 db.session.commit()
                 exit()
 
-            if app.config['AUTOMATE_IMEI_CHECK']:
+            if app.config['AUTOMATE_IMEI_CHECK'] or ussd:
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
-                    print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                    app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
 
-        except Exception:  # pragma: no cover
+        except Exception as e:  # pragma: no cover
             reg_details.update_processing_status('Failed')
             reg_details.update_report_status('Failed')
+            app.logger.exception(e)
             db.session.commit()
 
     @staticmethod
     def auto_approve(task_id, reg_details, flatten_imeis, app):
         from app.api.v1.resources.reviewer import SubmitReview
         from app.api.v1.models.devicequota import DeviceQuota as DeviceQuotaModel
+        from app.api.v1.models.eslog import EsLog
+        from app.api.v1.models.status import Status
         import json
         sr = SubmitReview()
         try:
@@ -198,8 +211,8 @@ class Device(db.Model):
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
 
                     for section in auto_approved_sections:
-                        RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed', section_status
-                                               , reg_details.id)
+                        RegDetails.add_comment(section, sections_comment, reg_details.user_id, 'Auto Reviewed',
+                                               section_status, reg_details.id)
 
                     reg_details.summary = json.dumps({'summary': result})
                     reg_details.report = result.get('compliant_report_name')
@@ -214,7 +227,11 @@ class Device(db.Model):
                     reg_details.save()
                     db.session.commit()
 
-        except Exception:  # pragma: no cover
+                    # create log
+                    log = EsLog.auto_review(reg_details, "Registration Request", 'Post', status)
+                    EsLog.insert_log(log)
+
+        except Exception as e:  # pragma: no cover
             db.session.rollback()
             reg_details.update_processing_status('Failed')
             reg_details.update_status('Failed')
@@ -223,11 +240,16 @@ class Device(db.Model):
                                                     request_type='registration', request_status=7,
                                                     message=message)
             db.session.commit()
+            app.logger.exception(e)
+            # create log
+            log = EsLog.auto_review(reg_details, "Registration Request", 'Post',
+                                    Status.get_status_type(reg_details.status))
+            EsLog.insert_log(log)
 
         return True
 
     @classmethod
-    def create(cls, reg_details, reg_device_id):
+    def create(cls, reg_details, reg_device_id, ussd=None):
         """Create a new device for a request."""
         from app import app
         try:
@@ -235,12 +257,14 @@ class Device(db.Model):
             db.session.commit()
             cls.bulk_delete(reg_details)
             ApprovedImeis.bulk_delete_imeis(reg_details)
+
             if reg_details.import_type == 'file':
                 thread = threading.Thread(daemon=True, target=cls.async_bulk_create,
                                           args=(reg_details, reg_device_id, app))
                 thread.start()
             else:
-                cls.sync_bulk_create(reg_details, reg_device_id, app)
+                cls.sync_bulk_create(reg_details, reg_device_id, app, ussd)
+
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             reg_details.update_processing_status('Failed')

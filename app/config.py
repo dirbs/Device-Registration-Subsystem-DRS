@@ -80,7 +80,9 @@ class ConfigApp:
         self.app.config['DDCDS_LISTS'] = lists_config.get('ddcds_path')  # ddcds lists dir
         self.app.config['STRICT_HTTPS'] = self.config.get('server')['restrict_https']
         self.app.config['CORE_BASE_URL'] = global_config.get('dirbs_base_url')
+        self.app.config['BASE_URL'] = global_config.get('base_url')
         self.app.config['API_VERSION'] = global_config.get('core_api_v2')
+        self.app.config['API_VERSION_V1'] = global_config.get('core_api_v1')
         self.app.config['BABEL_DEFAULT_LOCALE'] = global_config.get('default_language')
         self.app.config['SUPPORTED_LANGUAGES'] = global_config.get('supported_languages')
         self.app.config['SQLALCHEMY_DATABASE_URI'] = self.database_uri()
@@ -95,11 +97,28 @@ class ConfigApp:
         self.app.config['MAX_IMEI_LENGTH'] = int(global_config.get('max_imei_length'))
         self.app.config['AUTOMATE_IMEI_CHECK'] = self.config.get('automate_imei_check')
         self.app.config['USE_GSMA_DEVICE_INFO'] = self.config.get('use_gsma_device_info')
+        self.app.config['es'] = self.config.get('elastic_server')
 
         self.app.config['CELERY_BROKER_URL'] = celery_config['RabbitmqUrl']
         self.app.config['result_backend'] = celery_config['RabbitmqBackend']
         self.app.config['CeleryTasks'] = celery_config['CeleryTasks']
         self.app.config['conditions'] = conditions
         self.app.config['broker_pool_limit'] = None
+
+        self.app.config['KEYCLOAK_URL'] = self.config.get('keycloak_server')['url']
+        self.app.config['KEYCLOAK_PORT'] = self.config.get('keycloak_server')['port']
+        self.app.config['KEYCLOAK_TOKEN'] = self.config.get('keycloak_server')['token']
+        self.app.config['KEYCLOAK_SEARCH'] = self.config.get('keycloak_server')['search']
+        self.app.config['KEYCLOAK_USERS'] = self.config.get('keycloak_server')['users']
+        self.app.config['KEYCLOAK_RESET_PASSWORD'] = self.config.get('keycloak_server')['reset_password']
+        self.app.config['KEYCLOAK_GROUP_ID'] = self.config.get('keycloak_server')['group_id']
+
+        self.app.config['JASMIN_URL'] = self.config.get('jasmin_server')['url']
+        self.app.config['JASMIN_PORT'] = self.config.get('jasmin_server')['port']
+        self.app.config['JASMIN_INDIVIDUAL_SEND'] = self.config.get('jasmin_server')['individual_send']
+        self.app.config['JASMIN_BATCH_SEND'] = self.config.get('jasmin_server')['batch_send']
+
+        self.app.config['USSD_PASSWORD_STRENGTH'] = self.config.get('ussd_password_strength')
+
         # app.config['MAX_CONTENT_LENGTH'] = 28 * 3 * 1024 * 1024
         return self.app

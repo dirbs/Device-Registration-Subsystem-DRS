@@ -33,7 +33,7 @@ from app.api.v1.schema.deregdetails import DeRegDetailsSchema
 from app.api.v1.schema.deregdetailsupdate import DeRegDetailsUpdateSchema
 from app.api.v1.schema.deregdevice import DeRegDeviceSchema
 from app.api.v1.schema.deregdocuments import DeRegDocumentsSchema
-from app.api.v1.models.notification import Notification
+from app.api.v1.models.eslog import EsLog
 
 
 class DeRegistrationRoutes(Resource):
@@ -82,23 +82,28 @@ class DeRegistrationRoutes(Resource):
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-            response = Utilities.store_file(file, tracking_id)
-            if response:
-                return Response(json.dumps(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+            imei_file = Utilities.store_file(file, tracking_id)
+            if imei_file:
+                return Response(json.dumps(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-            response = Utilities.process_de_reg_file(file.filename.split("/")[-1], tracking_id, args)
-            errored = 'device_count' in response or 'invalid_imeis' in response or \
-                      'duplicate_imeis' in response or 'invalid_format' in response
+            imei_file = Utilities.process_de_reg_file(file.filename.split("/")[-1], tracking_id, args)
+            errored = 'device_count' in imei_file or 'invalid_imeis' in imei_file or \
+                      'duplicate_imeis' in imei_file or 'invalid_format' in imei_file
+
+            imeis_list = Utilities.extract_imeis(imei_file)
+
             if not errored:
-                gsma_response = Utilities.get_device_details_by_tac(response)
+                gsma_response = Utilities.get_device_details_by_tac(imei_file)
                 response = DeRegDetails.create(args, tracking_id)
                 db.session.commit()
                 response = schema.dump(response, many=False).data
+                log = EsLog.new_request_serialize(response, "DeRegistration", imeis=imeis_list, dereg=True, method="Post")
+                EsLog.insert_log(log)
                 response = {'request': response, 'devices': gsma_response}
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
-                return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                return Response(app.json_encoder.encode(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             db.session.rollback()
@@ -143,11 +148,14 @@ class DeRegistrationRoutes(Resource):
                     return Response(app.json_encoder.encode(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 else:
+                    log = EsLog.new_request_serialize(response, "Close De-Registration", method="Put")
+                    EsLog.insert_log(log)
                     response = schema.dump(response, many=False).data
                     return Response(json.dumps(response), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             if file:
                 response = Utilities.store_file(file, tracking_id)
+                imeis_list = Utilities.extract_imeis(response)
                 if response:
                     return Response(json.dumps(response), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -160,12 +168,15 @@ class DeRegistrationRoutes(Resource):
 
             if filename:
                 response = Utilities.process_de_reg_file(filename, tracking_id, args)
+                imeis_list = Utilities.extract_imeis(response)
                 errored = 'device_count' in response or 'invalid_imeis' in response or \
                           'duplicate_imeis' in response or 'invalid_format' in response
                 if not errored:
                     gsma_response = Utilities.get_device_details_by_tac(response)
                     response = DeRegDetails.update(args, dreg_details, file=True)
                     response = schema.dump(response, many=False).data
+                    log = EsLog.new_request_serialize(response, "DeRegistration", imeis=imeis_list, dereg=True, method="Put")
+                    EsLog.insert_log(log)
                     response = {'request': response, 'devices': gsma_response}
                     return Response(json.dumps(response), status=CODES.get("OK"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -175,6 +186,8 @@ class DeRegistrationRoutes(Resource):
             else:
                 response = DeRegDetails.update(args, dreg_details, file=False)
                 response = schema.dump(response, many=False).data
+                log = EsLog.new_request_serialize(response, "DeRegistration", dereg=True, method="Put")
+                EsLog.insert_log(log)
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
