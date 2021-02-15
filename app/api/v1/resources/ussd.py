@@ -404,7 +404,7 @@ class Track_record_ussd(MethodResource):
                                         status=CODES.get("RECORD_MISMATCH"),
                                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     else:
-                        msg_string = Ussd_helper.set_record_info(device_info)
+                        msg_string = Ussd_helper.set_record_info(device_info, True)
                         print(msg_string)
 
                         messages = {
