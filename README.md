@@ -1,5 +1,4 @@
 * Project license has been updated to remove the requirement for acknowledgement
-* Qualcomm Technologies, Inc. will end support for DIRBS as of 1 June 2021
 ---
 
 ![Image of DIRBS Logo](https://avatars0.githubusercontent.com/u/42587891?s=100&v=4)
