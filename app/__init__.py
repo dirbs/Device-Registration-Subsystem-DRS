@@ -34,6 +34,7 @@ from app.serializer import JSONEncoder
 datetime.strptime('', '')
 
 app = Flask(__name__)
+app.logger.setLevel('DEBUG')
 app.json_encoder = JSONEncoder()
 CORS(app)
 Api(app)

@@ -38,6 +38,12 @@ from app.api.v1.resources.deregdetails import DeRegSectionRoutes
 from app.api.v1.resources.restart_process import RegistrationProcessRestart, DeRegistrationProcessRestart
 from .resources.deassociate import DeassociateImeis
 from .resources.associate import AssociateImeis, AssociateDuplicate
+from app.api.v1.resources.ussd import Register_ussd
+from app.api.v1.resources.ussd import Track_record_ussd
+from app.api.v1.resources.ussd import Delete_record_ussd
+from app.api.v1.resources.ussd import Ussd_records_count
+from app.api.v1.resources.ussd_scripts import Send, SendBatchTest
+from app.api.v1.resources.ussd_scripts import Ussd_Script
 
 api = Api(app, prefix='/api/v1', errors=CustomErrors)
 apidoc = ApiDocs(app, 'v1')
@@ -106,6 +112,24 @@ api.add_resource(DeassociateImeis, '/deassociate')
 api.add_resource(AssociateImeis, '/associate', '/associate/<uid>')
 
 api.add_resource(AssociateDuplicate, '/associate_duplicate')
+
+
+# USSD registrations
+api.add_resource(Register_ussd, '/register_ussd')
+
+# Track records using USSD
+api.add_resource(Track_record_ussd, '/track_record_ussd')
+
+# Deleting record using USSD
+api.add_resource(Delete_record_ussd, '/delete_record_ussd')
+
+# Count registered applications USSD
+api.add_resource(Ussd_records_count, '/ussd_records_count')
+
+# test controller for testing purposes
+api.add_resource(Send, '/send')
+api.add_resource(SendBatchTest, '/sendbatch')
+api.add_resource(Ussd_Script, '/ussd_script')
 
 
 docs = apidoc.init_doc()

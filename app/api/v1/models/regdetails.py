@@ -1,6 +1,6 @@
 """
 DRS Registration Details Model package.
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -59,6 +59,8 @@ class RegDetails(db.Model):
     comments = db.relationship('RegComments', backref='regdetails', passive_deletes=True, lazy=True)
     documents = db.relationship('RegDocuments', backref='regdetails', passive_deletes=True, lazy=True)
     devices = db.relationship('Device', backref='regdetails', passive_deletes=True, lazy=True)
+    msisdn = db.Column(db.String(20))
+    network = db.Column(db.String(20))
 
     def __init__(self, args, tracking_id):
         """Constructor."""
@@ -75,6 +77,9 @@ class RegDetails(db.Model):
         self.status = status_id
         self.processing_status = status_id
         self.report_status = status_id
+        self.msisdn = args.get("msisdn")
+        self.network = args.get("network")
+
 
     @classmethod
     def create_index(cls, engine):
@@ -467,3 +472,25 @@ class RegDetails(db.Model):
                 "latest_pending_requests": pending_review_requests
             }
 
+    @classmethod
+    def get_count(cls, msisdn):
+        count_with_msisdn = cls.query.filter_by(msisdn=msisdn).count()
+        return {
+            "count_with_msisdn": count_with_msisdn
+        }
+
+    @classmethod
+    def get_all_counts(cls, msisdn):
+        review_count = cls.query.filter_by(msisdn=msisdn).filter_by(status=4).count()
+        pending_review_count = cls.query.filter_by(msisdn=msisdn).filter_by(status=3).count()
+        approved_count = cls.query.filter_by(msisdn=msisdn).filter_by(status=6).count()
+        rejected_count = cls.query.filter_by(msisdn=msisdn).filter_by(status=7).count()
+        failed_count = cls.query.filter_by(msisdn=msisdn).filter_by(status=9).count()
+
+        return {
+            "review_count": review_count,
+            "pending_review_count": pending_review_count,
+            "approved_count": approved_count,
+            "rejected_count": rejected_count,
+            "failed_count": failed_count
+        }

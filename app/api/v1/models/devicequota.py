@@ -22,7 +22,7 @@ class DeviceQuota(db.Model):
     """Database model for devicequota table."""
     __tablename__ = 'devicequota'
 
-    USER_TYPE_MAP = {'individual': 1, 'exporter': 2, 'importer': 3}
+    USER_TYPE_MAP = {'individual': 1, 'exporter': 2, 'importer': 3, 'ussd': 4}
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(64), nullable=False)

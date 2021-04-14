@@ -1,5 +1,5 @@
 # DRS makefile.
-# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -87,3 +87,6 @@ test:
 lint:
 	pip3 install pylint
 	pylint --verbose app/* scripts/* tests/* manage.py setup.py
+
+create-index:
+	python3 manage.py create-index

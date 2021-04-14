@@ -1,7 +1,7 @@
 # configuration file
 
 # SPDX-License-Identifier: BSD-4-Clause-Clear
-# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 #    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -9,7 +9,7 @@
 #    All advertising materials mentioning features or use of this software, or any deployment of this software, or documentation accompanying any distribution of this software, must display the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 #    Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 # SPDX-License-Identifier: ZLIB-ACKNOWLEDGEMENT
-# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 # This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
 # Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
 #    The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
@@ -36,6 +36,8 @@ global:
 
   importer: 1000000
   exporter: 1000000
+  individual: 5
+  ussd: 5
 
   # minimum and maximum global msisdn lengths
   min_msisdn_length: 13
@@ -48,9 +50,10 @@ global:
   max_imei_per_device: 5
 
   #URLS
-  dirbs_base_url: '0.0.0.0:5000/'
+  dirbs_base_url: 'http://192.168.100.72:5000/'
   core_api_v1: 'api/v1'
   core_api_v2: 'api/v2'
+  base_url: 'http://127.0.0.1:5000/'
 
 
   #Directories
@@ -111,6 +114,11 @@ server:
   # value should be either "True" or "False"
   restrict_https: False
 
+#Elastic Search
+elastic_server:
+  Host : 'localhost'
+  Port : '9200'
+  Index: "database name"
 # celery configurations
 celery:
 
@@ -169,3 +177,22 @@ realtime_checks:
 stolen_info: 'stolen_status'
 
 registration_info: 'registration_status'
+
+# Keycloak
+keycloak_server:
+  url: 'http://192.168.100.216'
+  port: ':8080'
+  token: '/auth/realms/master/protocol/openid-connect/token'
+  search: '/auth/admin/realms/DIRBS/users?briefRepresentation=true&search='
+  users: '/auth/admin/realms/DIRBS/users'
+  reset_password: '/reset-password'
+  group_id: '8d3bdaff-15c4-4097-8fb2-121d2b7ad76d'
+
+# jasmin
+jasmin_server:
+  url: 'http://192.168.100.42'
+  port: ':8080'
+  individual_send: '/secure/send'
+  batch_send: '/secure/sendbatch'
+
+ussd_password_strength: False   # True for strong password

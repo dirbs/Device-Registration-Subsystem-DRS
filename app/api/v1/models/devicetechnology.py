@@ -1,6 +1,6 @@
 """
 DRS Registration Device Technology Model package.
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
 
@@ -41,13 +41,18 @@ class DeviceTechnology(db.Model):
             raise Exception
 
     @classmethod
-    def create(cls, reg_device_id, technologies):
+    def create(cls, reg_device_id, technologies, ussd_call=False):
         """Associate a technology with a request."""
         try:
-            for tech in technologies:
-                dev_tech = cls(reg_device_id, tech)
+            if ussd_call is False:
+                for tech in technologies:
+                    dev_tech = cls(reg_device_id, tech)
+                    dev_tech.save()
+                return technologies
+            else:
+                dev_tech = cls(reg_device_id, technologies)
                 dev_tech.save()
-            return technologies
+                return technologies
         except Exception:
             raise Exception
 
