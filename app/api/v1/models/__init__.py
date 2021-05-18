@@ -17,7 +17,7 @@ from flask_sqlalchemy import declarative_base
 
 __all__ = ["deregcomments", 'deregdetails', 'deregdocuments', 'deregimei', 'device', 'devicequota',
            'devicetechnology', 'devicetype', 'documents', 'imeidevice', 'regcomments', 'regdetails',
-           'regdevice', 'regdocuments', 'technologies', 'status', 'approvedimeis', 'notification','ussd']
+           'regdevice', 'regdocuments', 'technologies', 'status', 'approvedimeis', 'notification', 'ussd', 'assembled_devices']
 
 from app.api.v1.models import *
 

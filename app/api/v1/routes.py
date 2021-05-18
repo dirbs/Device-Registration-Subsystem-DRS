@@ -25,7 +25,7 @@ from app.api.v1.resources.deregdevice import DeRegDeviceRoutes
 from app.api.v1.resources.regdocuments import RegDocumentRoutes
 from app.api.v1.resources.deregdetails import DeRegistrationRoutes
 from app.api.v1.resources.deregdocuments import DeRegDocumentRoutes
-from app.api.v1.resources.regdevicedetails import DeviceDetailsRoutes
+from app.api.v1.resources.regdevicedetails import DeviceDetailsRoutes, AssembledDevicesRoutes
 from app.api.v1.resources.common import BaseRoutes, ServerConfigs, Files
 from app.api.v1.resources.version import Version
 from app.api.v1.resources.health import HealthCheck
@@ -55,6 +55,9 @@ api.add_resource(DeviceDetailsRoutes, '/registration/device/<reg_id>', '/registr
 api.add_resource(RegDocumentRoutes, '/registration/documents/<reg_id>', '/registration/documents')
 api.add_resource(RegSectionRoutes, '/registration/sections/<reg_id>')
 # api.add_resource(, '/registration/restart/<reg_id>')
+
+# local Assembled Devices
+api.add_resource(AssembledDevicesRoutes, '/registration/assembled_devices')
 
 # de-registration routes
 api.add_resource(DeRegistrationRoutes, '/deregistration', '/deregistration/<dereg_id>')

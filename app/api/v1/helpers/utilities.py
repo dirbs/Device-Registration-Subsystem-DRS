@@ -229,6 +229,20 @@ class Utilities:
         return norm_imeis
 
     @classmethod
+    def check_bulk_imeis_status(cls, child_file_normalized_imeis, status):
+        """Method to check for any whitelisted IMEI from current list."""
+        separator = "', '"
+        normalized_imei_string = "'" + separator.join(child_file_normalized_imeis) + "'"
+
+        query = """select * from approvedimeis where imei in ({0}) and status = '{1}'""".format(normalized_imei_string, status)
+        res = db.engine.execute(query)
+
+        whitelisted_imeis = [row[1] for row in res]
+
+        return whitelisted_imeis
+
+
+    @classmethod
     def get_id_tac_map(cls, devices):
         """Method to map tacs with ids."""
         device_map_list = []
@@ -352,6 +366,17 @@ class Utilities:
         except IOError:
             raise Exception
 
+
+    @staticmethod
+    def serialize_data_for_child(args, file):
+        data = {}
+        data.update({'parent_id': args.get('parent_id')})
+        data.update({'user_id': args.get('user_id')})
+        data.update({'device_count': args.get('device_count')})
+        data.update({'imei_per_device': args.get('imei_per_device')})
+        data.update({'file': file.filename})
+        return data
+
     @staticmethod
     def remove_file(file, tracking_id=None):
         """Method to remove file from system."""
@@ -398,6 +423,19 @@ class Utilities:
         file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id), filename)
         processor = Processor(file_path, args)
         response = processor.process('registration')
+        return response
+
+    @staticmethod
+    def process_assembled_reg_file(filename, tracking_id, args, parent_reg_details):
+        """Process assembled registration input file for local Assembly."""
+
+        parent_tracking_id = parent_reg_details.tracking_id
+        parent_file_name = parent_reg_details.file
+        parent_reg_details.parent_file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(parent_tracking_id), parent_file_name)
+
+        child_file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id), filename)
+        processor = Processor(child_file_path, args, parent_reg_details)
+        response = processor.process('assembled_registration')
         return response
 
     @staticmethod

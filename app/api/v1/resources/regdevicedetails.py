@@ -15,6 +15,8 @@ NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS 
 """
 import json
 import ast
+import uuid
+
 from flask import Response, request
 from flask_restful import Resource
 from flask_babel import lazy_gettext as _
@@ -27,11 +29,173 @@ from app.api.v1.models.devicetechnology import DeviceTechnology
 from app.api.v1.models.regdetails import RegDetails
 from app.api.v1.models.regdevice import RegDevice
 from app.api.v1.models.status import Status
+from app.api.v1.models.assembled_devices import Assembled_devices
 from app.api.v1.schema.devicedetails import DeviceDetailsSchema
+from app.api.v1.schema.localassemblydevicesdetails import AssembledDevicesSchema
 from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
 from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
 from app.api.v1.models.eslog import EsLog
+
+
+
+
+class AssembledDevicesRoutes(Resource):
+    """Class for handling Device Details routes."""
+
+    # @staticmethod
+    # def get(reg_id):
+    #     """GET method handler, returns device details."""
+    #     if not reg_id.isdigit() or not RegDetails.exists(reg_id):
+    #         return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
+    #                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+    #
+    #     schema = DeviceDetailsSchema()
+    #     try:
+    #         reg_device = RegDevice.get_device_by_registration_id(reg_id)
+    #         response = schema.dump(reg_device).data if reg_device else {}
+    #         return Response(json.dumps(response), status=CODES.get("OK"),
+    #                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+    #     except Exception as e:  # pragma: no cover
+    #         app.logger.exception(e)
+    #         error = {
+    #             'message': [_('Failed to retrieve response, please try later')]
+    #         }
+    #         return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
+    #                         mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+    #     finally:
+    #         db.session.close()
+
+    @staticmethod
+    def post():
+        """POST method handler, creates a new device."""
+        parent_id = request.form.to_dict().get('parent_id', None)
+
+        if not parent_id or not parent_id.isdigit() or not RegDetails.exists(parent_id):
+            return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+        try:
+            # validate the input field data
+            args = request.form.to_dict()
+            schema = AssembledDevicesSchema()
+            validation_errors = schema.validate(args)
+            if validation_errors:
+                return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            file = request.files.get('file')
+
+            print("\n"*5)
+            tracking_id = uuid.uuid4()
+            file_name = file.filename.split("/")[-1]
+            imei_file = Utilities.store_file(file, tracking_id)
+
+            if imei_file:
+                return Response(json.dumps(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            # get the parent details for cross verification
+            parent_reg_details = RegDetails.get_by_id(parent_id)
+
+            imei_file_resp = Utilities.process_assembled_reg_file(file_name, tracking_id, args, parent_reg_details)
+
+            # if file validates and returns IMEIs normalized list
+            child_file_normalized_imeis = Utilities.bulk_normalize(imei_file_resp)
+
+            # join list normalized imeis and make a list and check in DB with status other than pending
+            whitelisted_imies_list = Utilities.check_bulk_imeis_status(child_file_normalized_imeis, "whitelist")
+            if whitelisted_imies_list:
+                already_whitelisted = {"already whitelisted" : whitelisted_imies_list}
+                return Response(json.dumps(already_whitelisted), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            # create child request insert for reference
+
+            # id
+            # parent_reg_id
+            # user_id
+            # device_count
+            # imei_per_device
+            # file
+            # tracking_id
+            # created_at
+            # updated_at
+
+            # Serialize data for data insertion
+            assembled_devices_args = Utilities.serialize_data_for_child(args, file)
+
+            # create child record
+            reg_child_device = Assembled_devices.create(assembled_devices_args, tracking_id)
+
+            print("check and mate the Assembled devices response")
+            print(reg_child_device)
+            print(reg_child_device.id)
+
+            # bulk Update approved IMEIs
+            request_id = args.get('parent_id')
+            response_approved_imeis = Assembled_devices.bulk_update_approved_imeis(imeis=child_file_normalized_imeis, request_id=request_id, status="whitelist")
+
+            if response_approved_imeis:
+
+                # reg_device = RegDevice.create(args)
+                response = schema.dump(reg_child_device, many=False).data
+
+                response["user_id"] = args.get('user_id')
+                response['reg_details_id'] = reg_child_device.id
+                device_status = 'Whitelisted'
+                db.session.commit()
+
+                log = EsLog.new_child_device_serialize(response, request_type="Device Child Registration", regdetails=reg_child_device,
+                                                 reg_status=device_status, method='Post')
+                EsLog.insert_log(log)
+
+                print("checking the response of the child request")
+                print(response)
+
+                return Response(json.dumps(response), status=CODES.get("OK"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+
+
+
+
+            else:
+                return Response(json.dumps("Record update failure"), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            # print("Printing the response of IMEIs table")
+            # print(response_approved_imeis)
+            # print("Printing the args data")
+            # print(assembled_devices_args)
+            # print("Printing the file name for child normalized imeis")
+            # print(child_file_normalized_imeis)
+            # print("printing the file name")
+            # print(file)
+            # print(file.filename)
+            # print("Printing the file name for child normalized imeis")
+            # print(child_file_normalized_imeis)
+            # print("Printing the imei_file")
+            # print(imei_file_resp)
+            # print("Printing the processed file ")
+            # print(imei_file)
+            # print("Printing the args passed from API")
+            # print(args)
+            # print("Printing the args passed from API")
+            # print(parent_reg_details)
+            # print(parent_reg_details.file)
+
+
+        except Exception as e:  # pragma: no cover
+            db.session.rollback()
+            app.logger.exception(e)
+
+            data = {
+                'message': _('request device addition failed')
+            }
+
+            return Response(app.json_encoder.encode(data), status=CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        finally:
+            db.session.close()
 
 
 class DeviceDetailsRoutes(Resource):
@@ -64,10 +228,10 @@ class DeviceDetailsRoutes(Resource):
     def post():
         """POST method handler, creates a new device."""
         reg_id = request.form.to_dict().get('reg_id', None)
+
         if not reg_id or not reg_id.isdigit() or not RegDetails.exists(reg_id):
             return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-
         try:
             args = request.form.to_dict()
             schema = DeviceDetailsSchema()
@@ -79,6 +243,7 @@ class DeviceDetailsRoutes(Resource):
                     tracking_id = reg_details.tracking_id
                     arguments = {'imei_per_device': reg_details.imei_per_device,
                                  'device_count': reg_details.device_count}
+                    m_location = reg_details.m_location
                     get_gsma_info = Utilities.process_reg_file(filename, tracking_id, arguments)
                 else:
                     get_gsma_info = ast.literal_eval(reg_details.imeis)
@@ -135,7 +300,11 @@ class DeviceDetailsRoutes(Resource):
                                              reg_status=device_status, method='Post')
             EsLog.insert_log(log)
 
-            Device.create(reg_details, reg_device.id)
+            if m_location == 'local':
+                Device.create(reg_details, reg_device.id, m_location)
+            else:
+                Device.create(reg_details, reg_device.id)
+
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 

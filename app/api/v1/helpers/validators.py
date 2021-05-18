@@ -34,3 +34,9 @@ def validate_input(key, value):
         raise ValidationError(_('%(key)s cannot start or ends with tabs', key=key), field_names=[key])
     elif value.startswith('\n') or value.endswith('\n'):
         raise ValidationError(_('%(key)s cannot end with line breaks', key=key), field_names=[key])
+
+def validate_digit_field(key, val):
+    """Validate input field to be digit only."""
+
+    if not val.isdigit():
+        raise ValidationError(_('%(key)s field must have a digit value', key=key), field_names=[key])

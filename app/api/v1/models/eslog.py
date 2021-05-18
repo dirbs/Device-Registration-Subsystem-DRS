@@ -115,7 +115,7 @@ class EsLog:
                 "user_id": log_data["user_id"],
                 "status": log_data['status_label'],
                 "request_type": request_type,
-                "imeis": imeis,
+                "imeis": imeis if imeis else None,
                 "reviewer_id": log_data["reviewer_id"],
                 "reviewer_name": log_data["reviewer_name"],
                 "method": "Post",
@@ -187,6 +187,31 @@ class EsLog:
             "method": method,
             "created_at": date,
             "description": description + regdetails.user_name + " for Registration request id "
+                           + str(log_data["reg_details_id"])
+        }
+
+        return log
+
+    @staticmethod
+    def new_child_device_serialize(log_data, request_type, regdetails=None, reg_status=None, method=None):
+
+        date = datetime.now()
+        date = date.strftime("%Y-%m-%d %H:%M:%S")
+        es_lang = {"lang": "painless"}
+        description = "New Device created by "
+
+        log = {
+            "script": es_lang,
+            "devices": None,
+            "reg_id": regdetails.id,
+            "tracking_id": regdetails.tracking_id,
+            "user_name": None,
+            "user_id": regdetails.user_id,
+            "status": reg_status,
+            "request_type": request_type,
+            "method": method,
+            "created_at": date,
+            "description": description + str(regdetails.id) + " for Registration request id "
                            + str(log_data["reg_details_id"])
         }
 

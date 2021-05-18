@@ -86,6 +86,7 @@ class RegistrationRoutes(Resource):
                     return Response(json.dumps(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 imei_file = Utilities.process_reg_file(file_name, tracking_id, args)
+
                 if isinstance(imei_file, list):
                     response = RegDetails.create(args, tracking_id)
                 else:

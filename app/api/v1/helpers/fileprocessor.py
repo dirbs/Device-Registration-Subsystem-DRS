@@ -14,6 +14,8 @@ Redistribution and use in source and binary forms, with or without modification,
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import pandas as pd
+from pandas import Series
+import numpy as np
 from marshmallow import ValidationError
 from flask_babel import lazy_gettext as _
 
@@ -21,7 +23,7 @@ from flask_babel import lazy_gettext as _
 class Processor:
     """Class for processing input files for Device Registration."""
 
-    def __init__(self, file_path, args):
+    def __init__(self, file_path, args, parent_reg_details=None):
         """Constructor."""
         self.file_path = file_path
         self.device_count = int(args.get('device_count'))
@@ -29,6 +31,7 @@ class Processor:
         self.series_data = self.transform_to_series()
         self.imei_per_device = int(args.get('imei_per_device')) if 'imei_per_device' in args else \
             int(Processor.extract_imei_per_device(self.data))
+        self.parent_reg_details = parent_reg_details
 
     @staticmethod
     def extract_imei_per_device(data):
@@ -137,6 +140,8 @@ class Processor:
         """Method to return transformed data."""
         if type == 'registration':
             return self.data.values.tolist()
+        elif type == 'assembled_registration':
+            return np.hstack(self.data.values)
         else:
             return self.transform_dreg_data()
 
@@ -165,6 +170,55 @@ class Processor:
             errors['invalid_format'] = [_("Invalid IMEIs Format in input file")]
         return errors
 
+    def check_parent_child_mismatch(self):
+        """Method to find parent child IMEIs mismatch in file."""
+        # print("Printing the parent file things")
+        child_file_imeis = self.data
+        parent_file_imeis = self.read_tsv_file(self.parent_reg_details.parent_file_path)
+
+        df_row_reindex = pd.concat([parent_file_imeis, child_file_imeis], ignore_index=True)
+        resultant_imei_file_after_filter = df_row_reindex.drop_duplicates()
+
+        try :
+            resultant_df = parent_file_imeis.compare(resultant_imei_file_after_filter)
+            if resultant_df.empty:
+                # exactly matched with the parent file after filtering
+                return False
+            else:
+                return True
+        except Exception as e:  # pragma: no cover
+            print(e)
+            return True
+
+
+    def validate_assembled_registration(self):
+        """Method to validate registration request data."""
+        errors = {}
+        invalid_imeis = self.get_invalid_imeis()
+        duplicate_imeis = self.get_duplicate_imeis()
+        missing_imeis = self.validate_missing_imei()
+        rows_limit = self.check_rows_limit()
+        invalid_format = self.check_imei_format()
+        parent_child_mismatch = self.check_parent_child_mismatch()
+        # If user needs the list of imeis on the frontend we can show it.
+        if not self.validate_imei_per_device():
+            errors['imei_per_device'] = [_("IMEIs per device count in file is not same as input.")]
+        if not self.validate_device_count():
+            errors['device_count'] = [_("Device count in file is not same as input")]
+        if len(invalid_imeis) > 0:
+            errors['invalid_imeis'] = [_("Invalid IMEIs in the input file")]
+        if len(duplicate_imeis['IMEIs']) > 0:
+            errors['duplicate_imeis'] = [_("Duplicate IMEIs in the input file")]
+        if missing_imeis:
+            errors['missing_imeis'] = [_("Some IMEIs are missing in the columns")]
+        if not rows_limit:
+            errors['limit'] = [_("Rows limit is 10000000 for single request")]
+        if len(invalid_format) > 0:
+            errors['invalid_format'] = [_("Invalid IMEIs Format in input file")]
+        if parent_child_mismatch:
+            errors['parent_child_imeis_mismatch'] = [_("IMEIs from input file mismatched with main registration file.")]
+        return errors
+
     def validate_de_registration(self):
         """Method to validate de registration data."""
         errors = {}
@@ -185,6 +239,8 @@ class Processor:
         """Method to start the main process."""
         if request_type == 'registration':
             errors = self.validate_registration()
+        elif request_type == 'assembled_registration':
+            errors = self.validate_assembled_registration()
         else:
             errors = self.validate_de_registration()
         response = errors if errors else self.transform_data(request_type)

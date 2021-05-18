@@ -50,6 +50,7 @@ class RegistrationDetailsSchema(Schema):
     duplicate_imeis_file = fields.String(missing='')
     msisdn = fields.Str()
     network = fields.Str()
+    parent_id = fields.Int()
 
     @pre_load()
     def file_webpage(self, data):

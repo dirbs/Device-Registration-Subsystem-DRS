@@ -27,48 +27,6 @@ from app.api.v1.models.status import Status
 class UssdModel(db.Model):
     """Database model for USSD."""
     __tablename__ = 'regdetails'
-    #
-    # id = db.Column(db.Integer, primary_key=True)
-    # user_id = db.Column(db.String(64), nullable=False)
-    # user_name = db.Column(db.String)
-    # reviewer_id = db.Column(db.String(64), nullable=True)
-    # reviewer_name = db.Column(db.String(64), nullable=True)
-    # report_allowed = db.Column(db.Boolean, default=False)
-    # device_count = db.Column(db.Integer, nullable=False)
-    # imei_per_device = db.Column(db.Integer, nullable=False)
-    # import_type = db.Column(db.String(10))
-    # file = db.Column(db.String(30))
-    # imeis = db.Column(db.String)
-    # m_location = db.Column(db.String(20), nullable=False)
-    # tracking_id = db.Column(db.String(64))
-    # created_at = db.Column(db.DateTime(timezone=False), default=db.func.now())
-    # updated_at = db.Column(db.DateTime(timezone=False), onupdate=db.func.now(), default=db.func.now())
-    # processing_status = db.Column(db.Integer, db.ForeignKey('status.id'))
-    # report_status = db.Column(db.Integer, db.ForeignKey('status.id'))
-    # summary = db.Column(db.UnicodeText)
-    # report = db.Column(db.String)
-    # duplicate_imeis_file = db.Column(db.String())
-    #
-    # status = db.Column(db.Integer, db.ForeignKey('status.id'))
-    # comments = db.relationship('RegComments', backref='regdetails', passive_deletes=True, lazy=True)
-    # documents = db.relationship('RegDocuments', backref='regdetails', passive_deletes=True, lazy=True)
-    # devices = db.relationship('Device', backref='regdetails', passive_deletes=True, lazy=True)
-    # msisdn = db.Column(db.String(20))
-    # network = db.Column(db.String(20))
-
-    # def __init__(self, args, tracking_id):
-    #     """Constructor."""
-    #     status_id = Status.get_status_id('New Request')
-    #
-    #     self.file = args.get('file')
-    #     self.device_count = args.get('device_count')
-    #     self.user_id = args.get('user_id')
-    #     self.user_name = args.get('user_name')
-    #     self.reason = args.get('reason')
-    #     self.tracking_id = tracking_id
-    #     self.status = status_id
-    #     self.processing_status = status_id
-    #     self.report_status = status_id
 
     @staticmethod
     def exists(request_id):
