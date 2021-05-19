@@ -37,37 +37,36 @@ from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
 from app.api.v1.models.eslog import EsLog
 
-
-
-
 class AssembledDevicesRoutes(Resource):
     """Class for handling Device Details routes."""
 
-    # @staticmethod
-    # def get(reg_id):
-    #     """GET method handler, returns device details."""
-    #     if not reg_id.isdigit() or not RegDetails.exists(reg_id):
-    #         return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
-    #                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-    #
-    #     schema = DeviceDetailsSchema()
-    #     try:
-    #         reg_device = RegDevice.get_device_by_registration_id(reg_id)
-    #         response = schema.dump(reg_device).data if reg_device else {}
-    #         return Response(json.dumps(response), status=CODES.get("OK"),
-    #                         mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-    #     except Exception as e:  # pragma: no cover
-    #         app.logger.exception(e)
-    #         error = {
-    #             'message': [_('Failed to retrieve response, please try later')]
-    #         }
-    #         return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
-    #                         mimetype=MIME_TYPES.get('APPLICATION_JSON'))
-    #     finally:
-    #         db.session.close()
+    @staticmethod
+    def get(reg_id):
+        return "Everything is fine"
+        """GET method handler, returns device details."""
+        if not reg_id.isdigit() or not RegDetails.exists(reg_id):
+            return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+        schema = DeviceDetailsSchema()
+        try:
+            reg_device = RegDevice.get_device_by_registration_id(reg_id)
+            response = schema.dump(reg_device).data if reg_device else {}
+            return Response(json.dumps(response), status=CODES.get("OK"),
+                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+        except Exception as e:  # pragma: no cover
+            app.logger.exception(e)
+            error = {
+                'message': [_('Failed to retrieve response, please try later')]
+            }
+            return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+        finally:
+            db.session.close()
 
     @staticmethod
     def post():
+        return "Everything ok"
         """POST method handler, creates a new device."""
         parent_id = request.form.to_dict().get('parent_id', None)
 
@@ -84,8 +83,11 @@ class AssembledDevicesRoutes(Resource):
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
             file = request.files.get('file')
+            if file == None:
+                return Response(json.dumps({"File error": "Please attach a valid TSV file"}),
+                                status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
-            print("\n"*5)
             tracking_id = uuid.uuid4()
             file_name = file.filename.split("/")[-1]
             imei_file = Utilities.store_file(file, tracking_id)
@@ -109,27 +111,15 @@ class AssembledDevicesRoutes(Resource):
                 return Response(json.dumps(already_whitelisted), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
-            # create child request insert for reference
-
-            # id
-            # parent_reg_id
-            # user_id
-            # device_count
-            # imei_per_device
-            # file
-            # tracking_id
-            # created_at
-            # updated_at
-
             # Serialize data for data insertion
             assembled_devices_args = Utilities.serialize_data_for_child(args, file)
 
             # create child record
             reg_child_device = Assembled_devices.create(assembled_devices_args, tracking_id)
 
-            print("check and mate the Assembled devices response")
-            print(reg_child_device)
-            print(reg_child_device.id)
+            # print("check and mate the Assembled devices response")
+            # print(reg_child_device)
+            # print(reg_child_device.id)
 
             # bulk Update approved IMEIs
             request_id = args.get('parent_id')
@@ -155,34 +145,9 @@ class AssembledDevicesRoutes(Resource):
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
-
-
-
-
             else:
                 return Response(json.dumps("Record update failure"), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
-            # print("Printing the response of IMEIs table")
-            # print(response_approved_imeis)
-            # print("Printing the args data")
-            # print(assembled_devices_args)
-            # print("Printing the file name for child normalized imeis")
-            # print(child_file_normalized_imeis)
-            # print("printing the file name")
-            # print(file)
-            # print(file.filename)
-            # print("Printing the file name for child normalized imeis")
-            # print(child_file_normalized_imeis)
-            # print("Printing the imei_file")
-            # print(imei_file_resp)
-            # print("Printing the processed file ")
-            # print(imei_file)
-            # print("Printing the args passed from API")
-            # print(args)
-            # print("Printing the args passed from API")
-            # print(parent_reg_details)
-            # print(parent_reg_details.file)
-
 
         except Exception as e:  # pragma: no cover
             db.session.rollback()

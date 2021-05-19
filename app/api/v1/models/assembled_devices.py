@@ -168,10 +168,6 @@ class Assembled_devices(db.Model):
 
     @staticmethod
     def bulk_update_approved_imeis(imeis, request_id, status='whitelist'):
-        # print("Bulk update method called")
-        # print(imeis)
-        # print(request_id)
-        # print(status)
 
         """Method to update the IMEIs to whitelist on child request."""
         separator = "', '"
