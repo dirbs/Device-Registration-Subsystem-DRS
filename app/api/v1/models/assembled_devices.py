@@ -127,6 +127,14 @@ class Assembled_devices(db.Model):
             .scalar()
 
     @staticmethod
+    def parent_exists(parent_reg_id):
+        """Method to check weather the record exists or not."""
+        return db.session.query(
+            exists()
+            .where(Assembled_devices.parent_reg_id == parent_reg_id)) \
+            .scalar()
+
+    @staticmethod
     def get_all():
         """Return all registration requests."""
         return Assembled_devices.query.order_by(Assembled_devices.created_at.desc()).all()
@@ -134,8 +142,44 @@ class Assembled_devices(db.Model):
     @classmethod
     def get_child_record_with_id(cls, request_id):
         """Method to get device details from request."""
-        request = cls.get_by_id(request_id)
-        return request.devices
+
+        res = cls.get_by_id(request_id)
+        if res:
+            data = cls.serialize_data(res)
+        else:
+            data = None
+        return data
+
+    @classmethod
+    def get_child_records_with_parent_id(cls, parent_reg_id):
+        """Method to get assembled devices with parent."""
+        res_with_parent_id = Assembled_devices.query.filter_by(parent_reg_id=parent_reg_id).all()
+        data_list = []
+        for reg_child_device in res_with_parent_id:
+            serialized_data = cls.serialize_data(reg_child_device)
+
+            if serialized_data:
+                data_list.append(serialized_data)
+
+        if data_list:
+            return data_list
+        else:
+            return None
+
+    @staticmethod
+    def serialize_data(request):
+        data = {}
+
+        data.update({"id": request.id})
+        data.update({"parent_reg_id": request.parent_reg_id})
+        data.update({"user_id": request.user_id})
+        data.update({"device_count": request.device_count})
+        data.update({"imei_per_device": request.imei_per_device})
+        data.update({"file": request.file})
+        data.update({"tracking_id": request.tracking_id})
+        data.update({"created_at": str(request.created_at)})
+        data.update({"updated_at": str(request.updated_at)})
+        return data
 
     @classmethod
     def get_child_record_with_parent_id(cls, request_id):

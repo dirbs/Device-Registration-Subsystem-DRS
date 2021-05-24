@@ -22,7 +22,8 @@ from flask_restful import Resource
 from flask_babel import lazy_gettext as _
 
 from app import app, db
-from app.api.v1.helpers.error_handlers import REG_NOT_FOUND_MSG
+from app.api.v1.helpers.error_handlers import REG_NOT_FOUND_MSG, ASSEMBLED_REQUEST_NOT_FOUND_MSG, \
+    ASSEMBLED_DEVICES_NOT_FOUND_MSG
 from app.api.v1.helpers.response import MIME_TYPES, CODES
 from app.api.v1.models.device import Device
 from app.api.v1.models.devicetechnology import DeviceTechnology
@@ -37,23 +38,37 @@ from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
 from app.api.v1.models.eslog import EsLog
 
-class AssembledDevicesRoutes(Resource):
+
+class AssembledDevicesSearchRoutes(Resource):
     """Class for handling Device Details routes."""
 
     @staticmethod
-    def get(reg_id):
-        return "Everything is fine"
-        """GET method handler, returns device details."""
-        if not reg_id.isdigit() or not RegDetails.exists(reg_id):
-            return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
-                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+    def get(child_reg_id=None):
+        """GET method handler, returns device details. If id passed, throws that single record, if no id passed, will pass all records."""
 
-        schema = DeviceDetailsSchema()
+        # schema = DeviceDetailsSchema()
+
         try:
-            reg_device = RegDevice.get_device_by_registration_id(reg_id)
-            response = schema.dump(reg_device).data if reg_device else {}
-            return Response(json.dumps(response), status=CODES.get("OK"),
-                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            if child_reg_id == None:
+                data_list = []
+                reg_child_devices = Assembled_devices.get_all()
+                for reg_child_device in reg_child_devices:
+                    serialized_data = Assembled_devices.serialize_data(reg_child_device)
+
+                    if serialized_data:
+                        data_list.append(serialized_data)
+                db.session.close()
+                return Response(json.dumps(data_list), status=CODES.get("OK"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            else:
+                if not child_reg_id.isdigit() or not Assembled_devices.exists(child_reg_id):
+                    return Response(app.json_encoder.encode(ASSEMBLED_REQUEST_NOT_FOUND_MSG),
+                                status=CODES.get("UNPROCESSABLE_ENTITY"),mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                reg_child_device = Assembled_devices.get_child_record_with_id(child_reg_id)
+                response = reg_child_device if reg_child_device else {}
+                db.session.close()
+                return Response(json.dumps(response), status=CODES.get("OK"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
         except Exception as e:  # pragma: no cover
             app.logger.exception(e)
             error = {
@@ -61,12 +76,35 @@ class AssembledDevicesRoutes(Resource):
             }
             return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
                             mimetype=MIME_TYPES.get('APPLICATION_JSON'))
-        finally:
+
+class LocalAssemblyParentSearchRoutes(Resource):
+    """Class for handling Device Details routes."""
+    @staticmethod
+    def get(parent_reg_id):
+        """GET method handler, returns child records with parent ID"""
+
+        try:
+            if not parent_reg_id.isdigit() or not Assembled_devices.parent_exists(parent_reg_id):
+                return Response(app.json_encoder.encode(ASSEMBLED_DEVICES_NOT_FOUND_MSG),
+                            status=CODES.get("UNPROCESSABLE_ENTITY"),mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+            reg_child_devices_with_parent_id = Assembled_devices.get_child_records_with_parent_id(parent_reg_id)
+            response = reg_child_devices_with_parent_id if reg_child_devices_with_parent_id else {}
             db.session.close()
+            return Response(json.dumps(response), status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+        except Exception as e:  # pragma: no cover
+            app.logger.exception(e)
+            error = {
+                'message': [_('Failed to retrieve response, please try later')]
+            }
+            return Response(app.json_encoder.encode(error), status=CODES.get('INTERNAL_SERVER_ERROR'),
+                            mimetype=MIME_TYPES.get('APPLICATION_JSON'))
+
+
+class AssembledDevicesRoutes(Resource):
+    """Class for handling Device Details routes."""
 
     @staticmethod
     def post():
-        return "Everything ok"
         """POST method handler, creates a new device."""
         parent_id = request.form.to_dict().get('parent_id', None)
 
@@ -101,6 +139,16 @@ class AssembledDevicesRoutes(Resource):
 
             imei_file_resp = Utilities.process_assembled_reg_file(file_name, tracking_id, args, parent_reg_details)
 
+            errored = 'imei_per_device' in imei_file_resp or 'device_count' in imei_file_resp or \
+                      'invalid_imeis' in imei_file_resp or 'duplicate_imeis' in imei_file_resp or \
+                      'missing_imeis' in imei_file_resp or 'limit' in imei_file_resp or \
+                      'invalid_format' in imei_file_resp or 'parent_child_imeis_mismatch' in imei_file_resp
+            if errored:
+                return Response(app.json_encoder.encode(imei_file_resp),
+                                status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+
             # if file validates and returns IMEIs normalized list
             child_file_normalized_imeis = Utilities.bulk_normalize(imei_file_resp)
 
@@ -116,10 +164,6 @@ class AssembledDevicesRoutes(Resource):
 
             # create child record
             reg_child_device = Assembled_devices.create(assembled_devices_args, tracking_id)
-
-            # print("check and mate the Assembled devices response")
-            # print(reg_child_device)
-            # print(reg_child_device.id)
 
             # bulk Update approved IMEIs
             request_id = args.get('parent_id')
@@ -139,8 +183,8 @@ class AssembledDevicesRoutes(Resource):
                                                  reg_status=device_status, method='Post')
                 EsLog.insert_log(log)
 
-                print("checking the response of the child request")
-                print(response)
+                # print("checking the response of the child request")
+                # print(response)
 
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
@@ -169,6 +213,7 @@ class DeviceDetailsRoutes(Resource):
     @staticmethod
     def get(reg_id):
         """GET method handler, returns device details."""
+
         if not reg_id.isdigit() or not RegDetails.exists(reg_id):
             return Response(app.json_encoder.encode(REG_NOT_FOUND_MSG), status=CODES.get("UNPROCESSABLE_ENTITY"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))

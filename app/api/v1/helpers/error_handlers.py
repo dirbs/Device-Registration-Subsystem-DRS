@@ -91,6 +91,8 @@ CustomErrors = {
 key = "message"
 
 REG_NOT_FOUND_MSG = {key: [_('Registration Request not found.')]}
+ASSEMBLED_REQUEST_NOT_FOUND_MSG = {key: [_('Assembled Device Request not found.')]}
+ASSEMBLED_DEVICES_NOT_FOUND_MSG = {key: [_('No records found with that Parent ID.')]}
 DEREG_NOT_FOUND_MSG = {key: [_('De-Registration Request not found.')]}
 REPORT_NOT_FOUND_MSG = {key: [_('Report not found.')]}
 REPORT_NOT_ALLOWED_MSG = {key: [_('Report not allowed.')]}
