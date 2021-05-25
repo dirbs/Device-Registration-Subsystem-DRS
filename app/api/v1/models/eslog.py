@@ -114,6 +114,7 @@ class EsLog:
                 "user_name": log_data["user_name"],
                 "user_id": log_data["user_id"],
                 "status": log_data['status_label'],
+                "m_location": log_data['m_location'],
                 "request_type": request_type,
                 "imeis": imeis if imeis else None,
                 "reviewer_id": log_data["reviewer_id"],

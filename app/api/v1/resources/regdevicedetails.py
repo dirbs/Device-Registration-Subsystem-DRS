@@ -176,6 +176,7 @@ class AssembledDevicesRoutes(Resource):
 
                 response["user_id"] = args.get('user_id')
                 response['reg_details_id'] = reg_child_device.id
+                response['status'] = "whitelisted"
                 device_status = 'Whitelisted'
                 db.session.commit()
 

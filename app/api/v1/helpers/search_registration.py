@@ -41,6 +41,7 @@ class SearchRegistraion:
                 "tracking_id": d.get('tracking_id'),
                 "status": d.get('status'),
                 "report": d.get('report'),
+                "m_location": d.get('m_location'),
                 "report_status_label": d.get('processing_status'),
                 "processing_status_label": d.get('report_status'),
                 "request_type": d.get('request_type'),
