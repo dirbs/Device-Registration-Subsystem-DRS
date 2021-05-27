@@ -303,7 +303,12 @@ class DeviceDetailsRoutes(Resource):
             response = schema.dump(reg_device, many=False).data
             response["user_id"] = args.get('user_id')
             response['reg_details_id'] = reg_details.id
-            device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+
+            if m_location == 'local':
+                device_status = 'Approved'
+            else:
+                device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
+
             reg_details.update_status(device_status)
             db.session.commit()
 
