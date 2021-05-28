@@ -23,7 +23,7 @@ from flask_babel import lazy_gettext as _
 
 from app import app, db
 from app.api.v1.helpers.error_handlers import REG_NOT_FOUND_MSG, ASSEMBLED_REQUEST_NOT_FOUND_MSG, \
-    ASSEMBLED_DEVICES_NOT_FOUND_MSG
+    ASSEMBLED_DEVICES_NOT_FOUND_MSG, ASSEMBLED_REQUEST_DIGIT_MSG
 from app.api.v1.helpers.response import MIME_TYPES, CODES
 from app.api.v1.models.device import Device
 from app.api.v1.models.devicetechnology import DeviceTechnology
@@ -84,9 +84,14 @@ class LocalAssemblyParentSearchRoutes(Resource):
         """GET method handler, returns child records with parent ID"""
 
         try:
-            if not parent_reg_id.isdigit() or not Assembled_devices.parent_exists(parent_reg_id):
+            if not parent_reg_id.isdigit():
+                return Response(app.json_encoder.encode(ASSEMBLED_REQUEST_DIGIT_MSG),
+                            status=CODES.get("UNPROCESSABLE_ENTITY"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            if not Assembled_devices.parent_exists(parent_reg_id):
                 return Response(app.json_encoder.encode(ASSEMBLED_DEVICES_NOT_FOUND_MSG),
-                            status=CODES.get("UNPROCESSABLE_ENTITY"),mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+                            status=CODES.get("OK"), mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
             reg_child_devices_with_parent_id = Assembled_devices.get_child_records_with_parent_id(parent_reg_id)
             response = reg_child_devices_with_parent_id if reg_child_devices_with_parent_id else {}
             db.session.close()
