@@ -39,7 +39,7 @@ class Assembled_devices(db.Model):
     user_id = db.Column(db.String(64), nullable=False)
     device_count = db.Column(db.Integer, nullable=False)
     imei_per_device = db.Column(db.Integer, nullable=False)
-    file = db.Column(db.String(30))
+    file = db.Column(db.String(300))
     tracking_id = db.Column(db.String(64))
     created_at = db.Column(db.DateTime(timezone=False), default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=False), onupdate=db.func.now(), default=db.func.now())

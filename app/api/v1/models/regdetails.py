@@ -43,7 +43,7 @@ class RegDetails(db.Model):
     device_count = db.Column(db.Integer, nullable=False)
     imei_per_device = db.Column(db.Integer, nullable=False)
     import_type = db.Column(db.String(10))
-    file = db.Column(db.String(30))
+    file = db.Column(db.String(300))
     imeis = db.Column(db.String)
     m_location = db.Column(db.String(20), nullable=False)
     tracking_id = db.Column(db.String(64))
