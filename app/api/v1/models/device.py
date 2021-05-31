@@ -29,16 +29,14 @@ class Device(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     tac = db.Column(db.String(8))
-    m_location = db.Column(db.String(25))
     reg_details_id = db.Column(db.Integer, db.ForeignKey('regdetails.id', ondelete='CASCADE'))
     reg_device_id = db.Column(db.Integer, db.ForeignKey('regdevice.id', ondelete='CASCADE'))
 
     imeis = db.relationship('ImeiDevice', backref='device', passive_deletes=True, lazy=True)
 
-    def __init__(self, tac, reg_details_id, reg_device_id, m_location):
+    def __init__(self, tac, reg_details_id, reg_device_id):
         """Constructor."""
         self.tac = tac
-        self.m_location = m_location
         self.reg_details_id = reg_details_id
         self.reg_device_id = reg_device_id
 
@@ -50,7 +48,7 @@ class Device(db.Model):
         # reg_tac.create(bind=engine)
 
     @classmethod
-    def async_bulk_create(cls, reg_details, reg_device_id, app, m_location=None):  # pragma: no cover
+    def async_bulk_create(cls, reg_details, reg_device_id, app, ussd=None):  # pragma: no cover
         """Create devices async."""
         with app.app_context():
             from app import db
@@ -62,7 +60,7 @@ class Device(db.Model):
                 imeis = []
                 for device_imeis in response:
                     tac = Utilities.get_imei_tac(device_imeis[0])
-                    device = cls(tac, reg_details.id, reg_device_id, m_location)
+                    device = cls(tac, reg_details.id, reg_device_id)
                     db.session.add(device)
                     db.session.flush()
                     imeis = imeis + device_imeis
@@ -84,6 +82,7 @@ class Device(db.Model):
                 db.session.commit()
                 task_id = Utilities.generate_summary(imeis, reg_details.tracking_id)
                 app.logger.info('task with task_id: {0} initiated'.format(task_id))
+
                 if task_id:
                     Utilities.pool_summary_request(task_id, reg_details, app)
                 else:
@@ -92,9 +91,15 @@ class Device(db.Model):
                     db.session.commit()
 
                 if app.config['AUTOMATE_IMEI_CHECK'] and reg_details.m_location == 'overseas':
-                    print("condition met for auto check async method")
+                    # print("condition met for auto check async method")
                     if Device.auto_approve(task_id, reg_details, imeis, app):
                         print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                elif reg_details.m_location == 'local':
+                    if Device.auto_approve(task_id, reg_details, imeis, app):
+                        app.logger.info(
+                            "Auto Approved/Rejected Registration Application for Local Assembly with Id:" + str(
+                                reg_details.id))
+
 
             except Exception as e:
                 app.logger.exception(e)
@@ -104,7 +109,7 @@ class Device(db.Model):
                 db.session.commit()
 
     @classmethod
-    def sync_bulk_create(cls, reg_details, reg_device_id, app, ussd=None, m_location=None):
+    def sync_bulk_create(cls, reg_details, reg_device_id, app, ussd=None):
         """Create devices in bulk."""
         try:
             flatten_imeis = []
@@ -118,7 +123,7 @@ class Device(db.Model):
 
             for device_imeis in imeis_lists:
 
-                device = cls(device_imeis[0][:8], reg_details.id, reg_device_id, m_location)
+                device = cls(device_imeis[0][:8], reg_details.id, reg_device_id)
                 device.save()
 
                 for imei in device_imeis:
@@ -139,7 +144,6 @@ class Device(db.Model):
             db.session.commit()
 
             task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
-
             if task_id:
                 Utilities.pool_summary_request(task_id, reg_details, app)
             else:
@@ -148,9 +152,12 @@ class Device(db.Model):
                 exit()
 
             if (app.config['AUTOMATE_IMEI_CHECK'] or ussd) and reg_details.m_location == 'overseas':
-                print("condition met for auto check or ussd in sync method")
+                # print("condition met for auto check or ussd in sync method")
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
                     app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+            elif reg_details.m_location == 'local':
+                if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
+                    app.logger.info("Auto Approved/Rejected Registration Application for Local Assembly with Id:" + str(reg_details.id))
 
         except Exception as e:  # pragma: no cover
             reg_details.update_processing_status('Failed')
@@ -253,7 +260,7 @@ class Device(db.Model):
         return True
 
     @classmethod
-    def create(cls, reg_details, reg_device_id, ussd=None, m_location=None):
+    def create(cls, reg_details, reg_device_id, ussd=None):
         """Create a new device for a request."""
         from app import app
         try:
@@ -263,7 +270,6 @@ class Device(db.Model):
             ApprovedImeis.bulk_delete_imeis(reg_details)
 
             if reg_details.import_type == 'file':
-                ''' For testing purpose ikram '''
                 thread = threading.Thread(daemon=True, target=cls.async_bulk_create,
                                           args=(reg_details, reg_device_id, app, ussd))
                 thread.start()

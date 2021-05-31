@@ -321,10 +321,7 @@ class DeviceDetailsRoutes(Resource):
                                              reg_status=device_status, method='Post')
             EsLog.insert_log(log)
 
-            if m_location == 'local':
-                Device.create(reg_details, reg_device.id, m_location)
-            else:
-                Device.create(reg_details, reg_device.id)
+            Device.create(reg_details, reg_device.id)
 
             return Response(json.dumps(response), status=CODES.get("OK"),
                             mimetype=MIME_TYPES.get("APPLICATION_JSON"))
