@@ -147,7 +147,8 @@ class AssembledDevicesRoutes(Resource):
             errored = 'imei_per_device' in imei_file_resp or 'device_count' in imei_file_resp or \
                       'invalid_imeis' in imei_file_resp or 'duplicate_imeis' in imei_file_resp or \
                       'missing_imeis' in imei_file_resp or 'limit' in imei_file_resp or \
-                      'invalid_format' in imei_file_resp or 'parent_child_imeis_mismatch' in imei_file_resp
+                      'invalid_format' in imei_file_resp or 'parent_child_imeis_mismatch' in imei_file_resp \
+                      or 'parent_child_id_mismatch' in imei_file_resp or 'parent_approved' in imei_file_resp
             if errored:
                 return Response(app.json_encoder.encode(imei_file_resp),
                                 status=CODES.get("UNPROCESSABLE_ENTITY"),

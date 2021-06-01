@@ -748,6 +748,28 @@ class SubmitReview(MethodResource):
                     updated_imeis.append(imei_)
         ApprovedImeis.bulk_insert_imeis(updated_imeis)
 
+
+    def __update_to_pending_as_local_imeis(self, imeis):
+        """Method to update pending imeis to approved in the table"""
+        imei_status = 'pending'
+        imei_delta_status = 'update'
+        updated_imeis = []
+
+        for imei in imeis:
+            if ApprovedImeis.exists(imei):
+                imei_ = ApprovedImeis.get_imei(imei)
+                imei_.status = imei_status
+
+                # fix: DDRS-286
+                # if an imei was in pending and exported to core then update the status
+                # else keep the delta status as add because if an imei was not exported at
+                # first and is now going in the list then core import will throw an error
+                # of not existence
+                if imei_.exported:
+                    imei_.delta_status = imei_delta_status
+                    updated_imeis.append(imei_)
+        ApprovedImeis.bulk_insert_imeis(updated_imeis)
+
     def __change_rejected_imeis_status(self, imeis):
         """Method to change the status of imeis which are provisionally registered."""
         changed_imeis = []

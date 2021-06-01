@@ -31,6 +31,7 @@ class Processor:
         self.series_data = self.transform_to_series()
         self.imei_per_device = int(args.get('imei_per_device')) if 'imei_per_device' in args else \
             int(Processor.extract_imei_per_device(self.data))
+        self.args = args
         self.parent_reg_details = parent_reg_details
 
     @staticmethod
@@ -179,10 +180,32 @@ class Processor:
         df_row_reindex = pd.concat([parent_file_imeis, child_file_imeis], ignore_index=True)
         resultant_imei_file_after_filter = df_row_reindex.drop_duplicates()
 
-        try :
+        try:
             resultant_df = parent_file_imeis.compare(resultant_imei_file_after_filter)
             if resultant_df.empty:
                 # exactly matched with the parent file after filtering
+                return False
+            else:
+                return True
+        except Exception as e:  # pragma: no cover
+            print(e)
+            return True
+
+    def check_parent_child_id_mismatch(self):
+        """Method to find parts and assembled authorized user_id."""
+        try:
+            if self.parent_reg_details.user_id == self.args.get("user_id"):
+                return False
+            else:
+                return True
+        except Exception as e:  # pragma: no cover
+            print(e)
+            return True
+
+    def check_parent_approved(self):
+        """Method to find parts and assembled authorized user_id."""
+        try:
+            if self.parent_reg_details.processing_status == 10 and self.parent_reg_details.report_status == 10:
                 return False
             else:
                 return True
@@ -200,6 +223,8 @@ class Processor:
         rows_limit = self.check_rows_limit()
         invalid_format = self.check_imei_format()
         parent_child_mismatch = self.check_parent_child_mismatch()
+        parent_child_id_mismatch = self.check_parent_child_id_mismatch()
+        parent_approved = self.check_parent_approved()
         # If user needs the list of imeis on the frontend we can show it.
         if not self.validate_imei_per_device():
             errors['imei_per_device'] = [_("IMEIs per device count in file is not same as input.")]
@@ -217,6 +242,10 @@ class Processor:
             errors['invalid_format'] = [_("Invalid IMEIs Format in input file")]
         if parent_child_mismatch:
             errors['parent_child_imeis_mismatch'] = [_("IMEIs from input file mismatched with main registration file.")]
+        if parent_child_id_mismatch:
+            errors['parent_child_id_mismatch'] = [_("Only the user that applied for parts is authorized to apply.")]
+        if parent_approved:
+            errors['parent_approved'] = [_("Parts application must be processed and approved before applying for assembled devices.")]
         return errors
 
     def validate_de_registration(self):

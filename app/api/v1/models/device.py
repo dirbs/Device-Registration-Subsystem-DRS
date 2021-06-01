@@ -91,9 +91,8 @@ class Device(db.Model):
                     db.session.commit()
 
                 if app.config['AUTOMATE_IMEI_CHECK'] and reg_details.m_location == 'overseas':
-                    # print("condition met for auto check async method")
                     if Device.auto_approve(task_id, reg_details, imeis, app):
-                        print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                        app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
                 elif reg_details.m_location == 'local':
                     if Device.auto_approve(task_id, reg_details, imeis, app):
                         app.logger.info(
@@ -152,7 +151,6 @@ class Device(db.Model):
                 exit()
 
             if (app.config['AUTOMATE_IMEI_CHECK'] or ussd) and reg_details.m_location == 'overseas':
-                # print("condition met for auto check or ussd in sync method")
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
                     app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
             elif reg_details.m_location == 'local':
@@ -217,7 +215,10 @@ class Device(db.Model):
                         current_quota = user_quota.reg_quota
                         user_quota.reg_quota = current_quota - len(imeis)
                         DeviceQuotaModel.commit_quota_changes(user_quota)
-                        sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
+                        if reg_details.m_location == 'local':
+                            sr._SubmitReview__update_to_pending_as_local_imeis(flatten_imeis)
+                        else:
+                            sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
                     else:
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
 
