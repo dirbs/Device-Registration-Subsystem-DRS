@@ -190,9 +190,6 @@ class AssembledDevicesRoutes(Resource):
                                                  reg_status=device_status, method='Post')
                 EsLog.insert_log(log)
 
-                # print("checking the response of the child request")
-                # print(response)
-
                 return Response(json.dumps(response), status=CODES.get("OK"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
@@ -264,6 +261,7 @@ class DeviceDetailsRoutes(Resource):
                     get_gsma_info = Utilities.process_reg_file(filename, tracking_id, arguments)
                 else:
                     get_gsma_info = ast.literal_eval(reg_details.imeis)
+                    m_location = reg_details.m_location
 
                 device = DeviceDetailsRoutes.put_gsma_device_info(get_gsma_info)
 

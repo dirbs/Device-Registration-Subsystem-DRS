@@ -88,12 +88,23 @@ class RegistrationRoutes(Resource):
                 imei_file = Utilities.process_reg_file(file_name, tracking_id, args)
 
                 if isinstance(imei_file, list):
+                    if args.get('m_location') == 'local':
+                        local_assembly_response = Utilities.check_local_imeis_for_duplication(args, tracking_id, file_name, '')
+                        if local_assembly_response:
+                            return Response(app.json_encoder.encode(local_assembly_response), status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                            mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                     response = RegDetails.create(args, tracking_id)
                 else:
                     return Response(app.json_encoder.encode(imei_file), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                     mimetype=MIME_TYPES.get("APPLICATION_JSON"))
             else:
                 Utilities.create_directory(tracking_id)
+                if args.get('m_location') == 'local':
+                    local_assembly_response = Utilities.check_local_imeis_for_duplication(args, tracking_id, '', args.get('imeis'))
+                    if local_assembly_response:
+                        return Response(app.json_encoder.encode(local_assembly_response),
+                                        status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                        mimetype=MIME_TYPES.get("APPLICATION_JSON"))
                 response = RegDetails.create(args, tracking_id)
             db.session.commit()
             response = schema.dump(response, many=False).data

@@ -162,7 +162,7 @@ class Processor:
             return False
 
         except Exception as e:
-            app.logger.error('An exception occurred while De-Registering IMEIs see exception log:')
+            app.logger.error('An exception occurred while checking for same IMEIs already applied in another parts file see exception log:')
             app.logger.exception(e)
             return None
 
@@ -208,7 +208,7 @@ class Processor:
         invalid_format = self.check_imei_format()
 
         # if local, then validate for same application already approved
-        if self.args.get("m_location"):
+        if self.args.get("m_location") == 'local':
             already_applied = self.check_for_same_imeis_applied()
         else:
             already_applied = False
@@ -235,7 +235,7 @@ class Processor:
         """Method to find parent child IMEIs mismatch in file."""
         # print("Printing the parent file things")
         child_file_imeis = self.data
-        parent_file_imeis = self.read_tsv_file(self.parent_reg_details.parent_file_path)
+        parent_file_imeis = self.extract_data(self.parent_reg_details.parent_file_path)
 
         df_row_reindex = pd.concat([parent_file_imeis, child_file_imeis], ignore_index=True)
         resultant_imei_file_after_filter = df_row_reindex.drop_duplicates()
