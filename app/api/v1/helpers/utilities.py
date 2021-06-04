@@ -197,7 +197,7 @@ class Utilities:
             matched_imeis = list(chain.from_iterable(res))
             if matched_imeis:
                 return {
-                    "message": "Following IMEIs have already been applied and waiting for assembly.",
+                    "msg": "Following IMEIs have already been applied and waiting for assembly.",
                     "count": len(matched_imeis),
                     "imeis": matched_imeis
                 }
