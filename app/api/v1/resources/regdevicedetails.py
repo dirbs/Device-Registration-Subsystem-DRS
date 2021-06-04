@@ -36,6 +36,7 @@ from app.api.v1.schema.localassemblydevicesdetails import AssembledDevicesSchema
 from app.api.v1.schema.devicedetailsupdate import DeviceDetailsUpdateSchema
 from app.api.v1.helpers.utilities import Utilities
 from app.api.v1.helpers.multisimcheck import MultiSimCheck
+from app.api.v1.resources.reviewer import SubmitReview
 from app.api.v1.models.eslog import EsLog
 
 
@@ -184,6 +185,13 @@ class AssembledDevicesRoutes(Resource):
                 response['reg_details_id'] = reg_child_device.id
                 response['status'] = "whitelisted"
                 device_status = 'Whitelisted'
+                message = 'Your request for assembled devices with id {id} has been whitelisted'.format(id=reg_child_device.id)
+
+                sr = SubmitReview()
+                sr._SubmitReview__generate_notification(user_id=args.get('user_id'), request_id=reg_child_device.id,
+                                                        request_type='assembled registration', request_status=10,
+                                                        message=message)
+
                 db.session.commit()
 
                 log = EsLog.new_child_device_serialize(response, request_type="Device Child Registration", regdetails=reg_child_device,
