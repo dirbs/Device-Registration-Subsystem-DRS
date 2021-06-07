@@ -189,7 +189,7 @@ class AssembledDevicesRoutes(Resource):
 
                 sr = SubmitReview()
                 sr._SubmitReview__generate_notification(user_id=args.get('user_id'), request_id=reg_child_device.id,
-                                                        request_type='assembled registration', request_status=10,
+                                                        request_type='assembled registration', request_status=6,
                                                         message=message)
 
                 db.session.commit()
