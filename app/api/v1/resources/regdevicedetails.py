@@ -316,10 +316,10 @@ class DeviceDetailsRoutes(Resource):
             response["user_id"] = args.get('user_id')
             response['reg_details_id'] = reg_details.id
 
-            if m_location == 'local':
-                device_status = 'Approved'
-            elif m_location == 'local' and not app.config['AUTOMATE_IMEI_CHECK']:
+            if (m_location == 'local') and (app.config['AUTOMATE_IMEI_CHECK'] == False):
                 device_status = 'Awaiting Documents'
+            elif (m_location == 'local') and (app.config['AUTOMATE_IMEI_CHECK'] == True):
+                device_status = 'Approved'
             else:
                 device_status = 'Pending Review' if app.config['AUTOMATE_IMEI_CHECK'] else 'Awaiting Documents'
 
