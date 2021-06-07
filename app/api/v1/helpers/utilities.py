@@ -443,6 +443,7 @@ class Utilities:
         data = {}
         data.update({'parent_id': args.get('parent_id')})
         data.update({'user_id': args.get('user_id')})
+        data.update({'user_name': args.get('user_name')})
         data.update({'device_count': args.get('device_count')})
         data.update({'imei_per_device': args.get('imei_per_device')})
         data.update({'file': file.filename})

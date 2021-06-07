@@ -37,6 +37,7 @@ class Assembled_devices(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     parent_reg_id = db.Column(db.String(30), nullable=False)
     user_id = db.Column(db.String(64), nullable=False)
+    user_name = db.Column(db.String(300), nullable=False)
     device_count = db.Column(db.Integer, nullable=False)
     imei_per_device = db.Column(db.Integer, nullable=False)
     file = db.Column(db.String(300))
@@ -47,6 +48,7 @@ class Assembled_devices(db.Model):
     def __init__(self, args, tracking_id):
         """Constructor."""
         self.user_id = args.get('user_id')
+        self.user_name = args.get('user_name')
         self.parent_reg_id = args.get('parent_id')
         self.tracking_id = tracking_id
         self.device_count = args.get('device_count')
@@ -173,6 +175,7 @@ class Assembled_devices(db.Model):
         data.update({"id": request.id})
         data.update({"parent_reg_id": request.parent_reg_id})
         data.update({"user_id": request.user_id})
+        data.update({"user_name": request.user_name})
         data.update({"device_count": request.device_count})
         data.update({"imei_per_device": request.imei_per_device})
         data.update({"file": request.file})

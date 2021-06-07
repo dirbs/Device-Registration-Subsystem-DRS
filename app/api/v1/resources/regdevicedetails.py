@@ -155,7 +155,6 @@ class AssembledDevicesRoutes(Resource):
                                 status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
 
-
             # if file validates and returns IMEIs normalized list
             child_file_normalized_imeis = Utilities.bulk_normalize(imei_file_resp)
 
@@ -165,6 +164,9 @@ class AssembledDevicesRoutes(Resource):
                 already_whitelisted = {"already whitelisted" : whitelisted_imies_list}
                 return Response(json.dumps(already_whitelisted), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            # get username from parts record
+            args['user_name'] = parent_reg_details.user_name
 
             # Serialize data for data insertion
             assembled_devices_args = Utilities.serialize_data_for_child(args, file)
@@ -182,6 +184,7 @@ class AssembledDevicesRoutes(Resource):
                 response = schema.dump(reg_child_device, many=False).data
 
                 response["user_id"] = args.get('user_id')
+                response["user_name"] = args.get('user_name')
                 response['reg_details_id'] = reg_child_device.id
                 response['status'] = "whitelisted"
                 device_status = 'Whitelisted'
