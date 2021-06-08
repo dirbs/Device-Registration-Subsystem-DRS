@@ -79,6 +79,15 @@ class RegistrationRoutes(Resource):
             if validation_errors:
                 return Response(app.json_encoder.encode(validation_errors), status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
+            # local assembly can only perform if the auto-check is enabled
+            if args.get('m_location') == 'local' and (app.config['AUTOMATE_IMEI_CHECK'] == False):
+                app.logger.exception("Please change AUTOMATE_IMEI_CHECK to True for Local Assembly")
+                return Response(app.json_encoder.encode({"message":
+                                                        "Local assembly can not be applied under manual process."}),
+                                status=CODES.get("UNPROCESSABLE_ENTITY"),
+                                mimetype=MIME_TYPES.get("APPLICATION_JSON"))
+
             if file:
                 file_name = file.filename.split("/")[-1]
                 imei_file = Utilities.store_file(file, tracking_id)
