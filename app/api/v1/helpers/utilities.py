@@ -161,7 +161,8 @@ class Utilities:
                             approvedimeis.request_id = regdetails.id 
                         WHERE regdetails.m_location='local'
                           AND regdetails.processing_status='10'
-                           AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+                          AND approvedimeis.status != 'removed' 
+                          AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
             else:
                 # single device
                 if len(device_imeis) == 1:
@@ -171,6 +172,7 @@ class Utilities:
                                     approvedimeis.request_id = regdetails.id 
                                     WHERE regdetails.m_location='local'
                                         AND regdetails.processing_status='10'
+                                        AND approvedimeis.status != 'removed' 
                                         AND approvedimeis.imei = '{imei}'""".format(imei=device_imeis[0][0][0:14])
                     else:
                         # single device with many IMEIs
@@ -182,7 +184,8 @@ class Utilities:
                                 approvedimeis.request_id = regdetails.id 
                             WHERE regdetails.m_location='local'
                               AND regdetails.processing_status='10'
-                               AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+                              AND approvedimeis.status != 'removed' 
+                              AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
                 else:
                     normalized_imeis = []
                     for imeis_list in device_imeis:
@@ -192,7 +195,8 @@ class Utilities:
                             approvedimeis.request_id = regdetails.id 
                         WHERE regdetails.m_location='local'
                           AND regdetails.processing_status='10'
-                           AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+                          AND approvedimeis.status != 'removed' 
+                          AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
             res = db.engine.execute(query).fetchall()
             matched_imeis = list(chain.from_iterable(res))
             if matched_imeis:
