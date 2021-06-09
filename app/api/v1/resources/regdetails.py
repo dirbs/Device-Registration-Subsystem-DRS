@@ -83,7 +83,7 @@ class RegistrationRoutes(Resource):
             # local assembly can only perform if the auto-check is enabled
             if args.get('m_location') == 'local' and (app.config['AUTOMATE_IMEI_CHECK'] == False):
                 app.logger.exception("Please change AUTOMATE_IMEI_CHECK to True for Local Assembly")
-                return Response(app.json_encoder.encode({"message":
+                return Response(app.json_encoder.encode({"error_message":
                                                         "Local assembly can not be applied under manual process."}),
                                 status=CODES.get("UNPROCESSABLE_ENTITY"),
                                 mimetype=MIME_TYPES.get("APPLICATION_JSON"))
