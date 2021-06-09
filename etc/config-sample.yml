@@ -138,6 +138,9 @@ celery:
 
 automate_imei_check: True or False
 
+# checks for exact same files in local assembly, False because IMEI level check is already working
+
+check_matched_files: False
 
 # Overwrite devices information with GSMA Device Details which is provided by user
 

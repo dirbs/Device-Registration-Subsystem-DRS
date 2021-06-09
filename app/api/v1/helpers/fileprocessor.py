@@ -209,7 +209,10 @@ class Processor:
 
         # if local, then validate for same application already approved
         if self.args.get("m_location") == 'local':
-            already_applied = self.check_for_same_imeis_applied()
+            if app.config['CHECK_MATCHED_FILES']:
+                already_applied = self.check_for_same_imeis_applied()
+            else:
+                already_applied = False
         else:
             already_applied = False
         # If user needs the list of imeis on the frontend we can show it.
