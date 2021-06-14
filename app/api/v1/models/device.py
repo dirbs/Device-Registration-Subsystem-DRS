@@ -48,7 +48,7 @@ class Device(db.Model):
         # reg_tac.create(bind=engine)
 
     @classmethod
-    def async_bulk_create(cls, reg_details, reg_device_id, app):  # pragma: no cover
+    def async_bulk_create(cls, reg_details, reg_device_id, app, ussd=None):  # pragma: no cover
         """Create devices async."""
         with app.app_context():
             from app import db
@@ -82,6 +82,7 @@ class Device(db.Model):
                 db.session.commit()
                 task_id = Utilities.generate_summary(imeis, reg_details.tracking_id)
                 app.logger.info('task with task_id: {0} initiated'.format(task_id))
+
                 if task_id:
                     Utilities.pool_summary_request(task_id, reg_details, app)
                 else:
@@ -89,9 +90,15 @@ class Device(db.Model):
                     app.logger.info('task with task_id: {0} failed'.format(task_id))
                     db.session.commit()
 
-                if app.config['AUTOMATE_IMEI_CHECK']:
+                if app.config['AUTOMATE_IMEI_CHECK'] and reg_details.m_location == 'overseas':
                     if Device.auto_approve(task_id, reg_details, imeis, app):
-                        print("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                        app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+                elif reg_details.m_location == 'local':
+                    if Device.auto_approve(task_id, reg_details, imeis, app):
+                        app.logger.info(
+                            "Auto Approved/Rejected Registration Application for Local Assembly with Id:" + str(
+                                reg_details.id))
+
 
             except Exception as e:
                 app.logger.exception(e)
@@ -136,7 +143,6 @@ class Device(db.Model):
             db.session.commit()
 
             task_id = Utilities.generate_summary(flatten_imeis, reg_details.tracking_id)
-
             if task_id:
                 Utilities.pool_summary_request(task_id, reg_details, app)
             else:
@@ -144,9 +150,12 @@ class Device(db.Model):
                 db.session.commit()
                 exit()
 
-            if app.config['AUTOMATE_IMEI_CHECK'] or ussd:
+            if (app.config['AUTOMATE_IMEI_CHECK'] or ussd) and reg_details.m_location == 'overseas':
                 if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
                     app.logger.info("Auto Approved/Rejected Registration Application Id:" + str(reg_details.id))
+            elif reg_details.m_location == 'local':
+                if Device.auto_approve(task_id, reg_details, flatten_imeis, app):
+                    app.logger.info("Auto Approved/Rejected Registration Application for Local Assembly with Id:" + str(reg_details.id))
 
         except Exception as e:  # pragma: no cover
             reg_details.update_processing_status('Failed')
@@ -206,7 +215,10 @@ class Device(db.Model):
                         current_quota = user_quota.reg_quota
                         user_quota.reg_quota = current_quota - len(imeis)
                         DeviceQuotaModel.commit_quota_changes(user_quota)
-                        sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
+                        if reg_details.m_location == 'local':
+                            sr._SubmitReview__update_to_pending_as_local_imeis(flatten_imeis)
+                        else:
+                            sr._SubmitReview__update_to_approved_imeis(flatten_imeis)
                     else:
                         sr._SubmitReview__change_rejected_imeis_status(flatten_imeis)
 
@@ -260,7 +272,7 @@ class Device(db.Model):
 
             if reg_details.import_type == 'file':
                 thread = threading.Thread(daemon=True, target=cls.async_bulk_create,
-                                          args=(reg_details, reg_device_id, app))
+                                          args=(reg_details, reg_device_id, app, ussd))
                 thread.start()
             else:
                 cls.sync_bulk_create(reg_details, reg_device_id, app, ussd)

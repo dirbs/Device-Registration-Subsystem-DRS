@@ -32,7 +32,7 @@ clean-pyc:
 
 start-dev:
 	pip3 install -r requirements.txt
-	flask run -h 0.0.0.0 -p 5000
+	flask run -h 127.0.0.1 -p 5000
 
 install-db:
 	python3 manage.py db init

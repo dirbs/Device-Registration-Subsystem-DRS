@@ -43,7 +43,7 @@ class RegDetails(db.Model):
     device_count = db.Column(db.Integer, nullable=False)
     imei_per_device = db.Column(db.Integer, nullable=False)
     import_type = db.Column(db.String(10))
-    file = db.Column(db.String(30))
+    file = db.Column(db.String(300))
     imeis = db.Column(db.String)
     m_location = db.Column(db.String(20), nullable=False)
     tracking_id = db.Column(db.String(64))
@@ -61,6 +61,7 @@ class RegDetails(db.Model):
     devices = db.relationship('Device', backref='regdetails', passive_deletes=True, lazy=True)
     msisdn = db.Column(db.String(20))
     network = db.Column(db.String(20))
+    parent_id = db.Column(db.Integer)
 
     def __init__(self, args, tracking_id):
         """Constructor."""
@@ -79,6 +80,7 @@ class RegDetails(db.Model):
         self.report_status = status_id
         self.msisdn = args.get("msisdn")
         self.network = args.get("network")
+        self.parent_id = args.get("parent_id")
 
 
     @classmethod

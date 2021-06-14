@@ -96,6 +96,7 @@ class ConfigApp:
         self.app.config['MIN_IMEI_LENGTH'] = int(global_config.get('min_imei_length'))
         self.app.config['MAX_IMEI_LENGTH'] = int(global_config.get('max_imei_length'))
         self.app.config['AUTOMATE_IMEI_CHECK'] = self.config.get('automate_imei_check')
+        self.app.config['CHECK_MATCHED_FILES'] = self.config.get('check_matched_files')
         self.app.config['USE_GSMA_DEVICE_INFO'] = self.config.get('use_gsma_device_info')
         self.app.config['es'] = self.config.get('elastic_server')
 

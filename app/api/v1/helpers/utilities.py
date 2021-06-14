@@ -139,6 +139,81 @@ class Utilities:
             return None
 
     @staticmethod
+    def check_local_imeis_for_duplication(args, tracking_id, file=None, device_imeis=None):
+        """ Method to validate imeis, if they exists in database with m_location as local and parts status as pending. """
+        # find imei devices and related imeis
+        try:
+            if file:
+                import pandas as pd
+
+                file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id), file)
+                file_imeis = Processor.extract_data(file_path)
+
+                series_data = pd.Series(file_imeis.values.ravel('F')).dropna()
+                series_data = pd.DataFrame(series_data)
+                series_data = series_data.rename(columns={0: "IMEIs"}).dropna()
+
+                normalized_imeis = []
+                for sgl_imei in series_data['IMEIs']:
+                    normalized_imeis.append(sgl_imei[0:14])
+
+                query = """SELECT approvedimeis.imei from approvedimeis join regdetails on
+                            approvedimeis.request_id = regdetails.id 
+                        WHERE regdetails.m_location='local'
+                          AND regdetails.processing_status='10'
+                          AND approvedimeis.status != 'removed' 
+                          AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+            else:
+                # single device
+                if len(device_imeis) == 1:
+                    # single device with just one IMEI
+                    if len(device_imeis[0]) == 1:
+                        query = """SELECT approvedimeis.imei from approvedimeis join regdetails on
+                                    approvedimeis.request_id = regdetails.id 
+                                    WHERE regdetails.m_location='local'
+                                        AND regdetails.processing_status='10'
+                                        AND approvedimeis.status != 'removed' 
+                                        AND approvedimeis.imei = '{imei}'""".format(imei=device_imeis[0][0][0:14])
+                    else:
+                        # single device with many IMEIs
+                        normalized_imeis = []
+                        for imeis_list in device_imeis[0]:
+                            normalized_imeis.append(imeis_list[0:14])
+
+                        query = """SELECT approvedimeis.imei from approvedimeis join regdetails on
+                                approvedimeis.request_id = regdetails.id 
+                            WHERE regdetails.m_location='local'
+                              AND regdetails.processing_status='10'
+                              AND approvedimeis.status != 'removed' 
+                              AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+                else:
+                    normalized_imeis = []
+                    for imeis_list in device_imeis:
+                        for imei in imeis_list:
+                            normalized_imeis.append(imei[0:14])
+                    query = """SELECT approvedimeis.imei from approvedimeis join regdetails on
+                            approvedimeis.request_id = regdetails.id 
+                        WHERE regdetails.m_location='local'
+                          AND regdetails.processing_status='10'
+                          AND approvedimeis.status != 'removed' 
+                          AND approvedimeis.imei IN {imeis}""".format(imeis=tuple(normalized_imeis))
+            res = db.engine.execute(query).fetchall()
+            matched_imeis = list(chain.from_iterable(res))
+            if matched_imeis:
+                return {
+                    "msg": "Following IMEIs have already been applied and waiting for assembly.",
+                    "count": len(matched_imeis),
+                    "imeis": matched_imeis
+                }
+            else:
+                return False
+
+        except Exception as e:
+            app.logger.error('An exception occurred while checking for duplicate IMEIs in pending state see exception log:')
+            app.logger.exception(e)
+            return True
+
+    @staticmethod
     def generate_imeis_file(imeis, tracking_id, file_type):
         """Method to generate a file for duplicated imeis."""
         upload_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id))
@@ -227,6 +302,20 @@ class Utilities:
             norm_imei = cls.get_normalized_imei(imei)
             norm_imeis.append(norm_imei)
         return norm_imeis
+
+    @classmethod
+    def check_bulk_imeis_status(cls, child_file_normalized_imeis, status):
+        """Method to check for any whitelisted IMEI from current list."""
+        separator = "', '"
+        normalized_imei_string = "'" + separator.join(child_file_normalized_imeis) + "'"
+
+        query = """select * from approvedimeis where imei in ({0}) and status = '{1}'""".format(normalized_imei_string, status)
+        res = db.engine.execute(query)
+
+        whitelisted_imeis = [row[1] for row in res]
+
+        return whitelisted_imeis
+
 
     @classmethod
     def get_id_tac_map(cls, devices):
@@ -352,6 +441,18 @@ class Utilities:
         except IOError:
             raise Exception
 
+
+    @staticmethod
+    def serialize_data_for_child(args, file):
+        data = {}
+        data.update({'parent_id': args.get('parent_id')})
+        data.update({'user_id': args.get('user_id')})
+        data.update({'user_name': args.get('user_name')})
+        data.update({'device_count': args.get('device_count')})
+        data.update({'imei_per_device': args.get('imei_per_device')})
+        data.update({'file': file.filename})
+        return data
+
     @staticmethod
     def remove_file(file, tracking_id=None):
         """Method to remove file from system."""
@@ -398,6 +499,19 @@ class Utilities:
         file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id), filename)
         processor = Processor(file_path, args)
         response = processor.process('registration')
+        return response
+
+    @staticmethod
+    def process_assembled_reg_file(filename, tracking_id, args, parent_reg_details):
+        """Process assembled registration input file for local Assembly."""
+
+        parent_tracking_id = parent_reg_details.tracking_id
+        parent_file_name = parent_reg_details.file
+        parent_reg_details.parent_file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(parent_tracking_id), parent_file_name)
+
+        child_file_path = os.path.join(app.config['DRS_UPLOADS'], '{0}'.format(tracking_id), filename)
+        processor = Processor(child_file_path, args, parent_reg_details)
+        response = processor.process('assembled_registration')
         return response
 
     @staticmethod
